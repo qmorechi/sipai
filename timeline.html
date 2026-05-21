@@ -90,8 +90,8 @@ ul.card-list li strong{color:var(--text);font-weight:500;}
 .status-chip.warn{border-color:rgba(196,169,107,.4);color:#c4a96b;background:rgba(196,169,107,.08);}
 .status-chip.next{border-color:rgba(91,168,158,.4);color:var(--accent-2);background:rgba(91,168,158,.08);}
 /* IP GRID */
-.ip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px;align-items:start;}
-.ip-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:transform .2s,border-color .2s;display:flex;flex-direction:column;}
+.ip-grid{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;align-items:flex-start;}
+.ip-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:transform .2s,border-color .2s;display:flex;flex-direction:column;width:calc(33.333% - 10px);min-width:180px;}
 .ip-card:hover{transform:translateY(-2px);border-color:#3a3a42;}
 .ip-image{width:100%;height:160px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}.ip-image img{width:100%;height:100%;object-fit:cover;display:block;}
 .ip-image img{width:100%;height:100%;object-fit:cover;display:block;}

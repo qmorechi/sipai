@@ -32,11 +32,15 @@ button.node.active{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,
 .member-tag .remove-btn{cursor:pointer;color:#9ba7b5;font-size:10px;margin-left:2px;line-height:1}
 .member-tag .remove-btn:hover{color:#ff8b73}
 
-/* ── 下拉選單 ── */
-.member-select-wrap{margin:6px 0 0 42px;position:relative;display:inline-block}
-.member-select{appearance:none;background:#1a1e27;border:1px solid rgba(255,255,255,.18);color:#9ba7b5;border-radius:8px;padding:4px 28px 4px 10px;font-size:12px;cursor:pointer;font-family:inherit;transition:border-color .15s}
-.member-select:hover,.member-select:focus{border-color:var(--c);outline:none;color:#e8e6e0}
-.member-select-wrap::after{content:"▾";position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ba7b5;font-size:10px}
+/* ── 加入按鈕 + 彈出選單 ── */
+.node-wrap{position:relative;display:flex;align-items:flex-start;gap:6px}
+.add-btn{flex-shrink:0;width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#1a1e27;color:#9ba7b5;font-size:16px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:.15s border-color,.15s color;margin-top:2px;font-family:inherit}
+.add-btn:hover{border-color:var(--c);color:var(--c)}
+.node-wrap .node{flex:1;min-width:0}
+.add-popup{display:none;position:absolute;left:0;top:34px;z-index:100;background:#1e2330;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:4px;min-width:140px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.add-popup.open{display:block}
+.add-popup-option{display:block;width:100%;text-align:left;background:none;border:none;color:#d8d2c8;font-size:12px;font-family:inherit;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600}
+.add-popup-option:hover{background:rgba(255,255,255,.08);color:#fff4e3}
 
 /* ── 側欄 ── */
 .side{position:sticky;top:0;height:100vh;border-left:1px solid rgba(255,255,255,.12);background:#171b22;padding:28px;overflow:auto}
@@ -59,6 +63,12 @@ li{margin:.35em 0}
 .side-member-avatar{width:22px;height:22px;border-radius:50%;background:var(--c);display:grid;place-items:center;font-size:10px;font-weight:900;color:#111318}
 .no-member{color:#5a6270;font-size:13px;font-style:italic}
 
+/* ── 載入狀態 ── */
+.sync-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-left:6px;vertical-align:middle;transition:background .3s}
+.sync-dot.syncing{background:#f2b35e;animation:pulse .8s infinite}
+.sync-dot.error{background:#ff8b73}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
 @media(max-width:1050px){
   .app{display:block}
   .side{position:relative;height:auto;border-left:0;border-top:1px solid rgba(255,255,255,.12)}
@@ -72,7 +82,7 @@ li{margin:.35em 0}
   <main class="map">
     <header>
       <div>
-        <h1>IP 建立全流程：22 個專業角色互動節點圖</h1>
+        <h1>IP 建立全流程：22 個專業角色互動節點圖<span class="sync-dot" id="syncDot" title="Supabase 連線中"></span></h1>
         <p class="lead">四大流程從品牌核心、角色聖經、故事企劃到分鏡輸出；社群與商業角色會在企劃與輸出階段介入。點擊任一節點可查看該角色的專業權責。</p>
         <div class="legend" id="legend"></div>
       </div>
@@ -82,7 +92,19 @@ li{margin:.35em 0}
   <aside class="side" id="detail"></aside>
 </div>
 <script>
-// ── 10 位成員 ──
+// ── Supabase 設定 ──
+const SB_URL  = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemJ3eGdva212YXloenJ2a3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTY1NTYsImV4cCI6MjA5NDkzMjU1Nn0.7d_pasAywneqOxOHFGlc1dpMJcUv1BDCvhV2jYLaAGE';
+const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+function setSyncState(state) {
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  dot.title = state === 'syncing' ? '同步中…' : state === 'error' ? '同步失敗，使用本地快取' : 'Supabase 已連線';
+}
+
+// ── 11 位成員 ──
 const MEMBERS = [
   { id:'qmore',  name:'qmore',  short:'QM' },
   { id:'bow',    name:'Bow',    short:'BW' },
@@ -94,46 +116,84 @@ const MEMBERS = [
   { id:'leo',    name:'Leo',    short:'LO' },
   { id:'maruo',  name:'Maruo',  short:'MR' },
   { id:'ray',    name:'Ray',    short:'RY' },
+  { id:'ring',   name:'Ring',   short:'RG' },
 ];
 
 // ── 角色資料 ──
 const DATA={"roles":[{"id":1,"phase":"Brand Core","name":"品牌策略總監","en":"Brand Strategy Director","scope":"定義品牌真相、受眾情緒、世界規則、角色定位、故事領域、語氣邊界與離題風險。","deliverables":["brand-core canonical files","品牌真相與世界規則","角色與內容邊界","off-brand 風險清單"],"risk":"若缺席，後續故事、角色與社群內容容易各自漂移。"},{"id":2,"phase":"Character v2","name":"專業攝影師","en":"Professional Photographer","scope":"控制相機格式、焦段、視角、構圖、景深、主體可讀性與角色素材的影像真實感。","deliverables":["鏡頭語言","焦段與景深規則","角色可讀性檢查"],"risk":"角色比例與視覺重點容易因鏡頭錯誤而失真。"},{"id":3,"phase":"Character v2","name":"角色美術指導","en":"Art Director","scope":"控制角色色彩、輪廓、材質語言、造型、道具、身份層級與背景克制。","deliverables":["角色視覺規格","色彩與材質語言","造型與道具層級"],"risk":"角色識別度下降，素材之間不像同一個角色。"},{"id":4,"phase":"Character v2","name":"角色燈光設計師","en":"Lighting Designer","scope":"控制主光、補光、背光、色溫、陰影柔度、反射、材質反應與背景整合。","deliverables":["角色燈光規則","材質反應規範","環境整合準則"],"risk":"同一角色在不同圖中材質與立體感不一致。"},{"id":5,"phase":"Character v2","name":"髮妝師","en":"Hair & Makeup Designer","scope":"真人、半寫實或髮妝敏感角色的髮型、妝感、膚質、眉眼唇重點與漂移風險。","deliverables":["hair/makeup rules","膚質與妝感標準","髮妝漂移檢查"],"risk":"真人 IP 容易因髮型、妝感或膚質漂移而失去一致性。"},{"id":6,"phase":"Character v2","name":"造型師","en":"Wardrobe Stylist","scope":"控制服裝輪廓、版型、布料、層次、色彩、招牌單品、場合變體與造型主次。","deliverables":["wardrobe rules","signature items","場合造型變體"],"risk":"角色服裝變成隨機搭配，品牌辨識度下降。"},{"id":7,"phase":"Character v2","name":"造型一致性審核員","en":"Styling Consistency Reviewer","scope":"檢查髮妝、服裝、配件、儀容是否仍符合身份、品牌語氣與場景目的。","deliverables":["styling review","一致性修正建議","通過/缺陷標註"],"risk":"小改動累積後，角色外觀逐漸偏離原設定。"},{"id":8,"phase":"Character v2","name":"角色表演設計師","en":"Character Performance Designer","scope":"定義姿態、表演、情緒表情標準、招牌動作、拿物方式與 movement limits。","deliverables":["performance_rules","expression/action standards","pose pack rules"],"risk":"角色會長得像，但站姿、動作、情緒不像本人。"},{"id":9,"phase":"Character v2","name":"商品 / 社群延展設計師","en":"Merchandise & Social Extension Designer","scope":"定義角色在代言、IG/FB、周邊、KV、封面、貼圖、包裝與 campaign 中如何變體但不失真。","deliverables":["extension_rules","商業/社群適配規則","不可更動特徵清單"],"risk":"角色被商品或版面需求拉走，失去 IP 原本辨識度。"},{"id":10,"phase":"Story & Planning","name":"爆款劇作專家","en":"Viral Story Expert","scope":"建立 logline、hook、矛盾、升級、payoff、loop trigger、replay detail 與 share frame。","deliverables":["story brief","hook/payoff 設計","短片核心梗"],"risk":"故事可愛但沒有觀看動機、分享理由或記憶點。"},{"id":11,"phase":"Story & Planning","name":"劇本審核專員","en":"Script Quality Reviewer","scope":"審查故事清楚度、可拍性、品牌符合度、最大弱點、必要修改與是否可進入 boards。","deliverables":["script-review","問題清單","go/no-go 建議"],"risk":"太早進入分鏡，後面會用視覺補救劇本問題。"},{"id":12,"phase":"Story & Planning","name":"視覺風格總監","en":"Look Development Director","scope":"定義視覺風格模式，例如 3D、寫實背景、繪本、玩具攝影，並防止風格漂移。","deliverables":["look-dev bible","style mode","風格漂移防線"],"risk":"每次生成都像不同專案或不同世界觀。"},{"id":13,"phase":"Social / Commercial","name":"商業合作策略師","en":"Commercial Partnership Strategist","scope":"檢查產品 fit、角色 fit、受眾信任、宣稱風險、商品露出與揭露需求。","deliverables":["合作適配建議","claim/disclosure risk","sponsor visibility rules"],"risk":"代言內容破壞角色信任，或商業訊息過強。"},{"id":14,"phase":"Story & Planning","name":"社群成長策略師","en":"Social Growth Strategist","scope":"提升自然觸及：hook、留存、分享/收藏/留言觸發、系列化與平台原生包裝。","deliverables":["growth notes","scroll-stop hook","share/save/comment triggers"],"risk":"內容好看但平台表現弱，無法形成觸及與系列累積。"},{"id":15,"phase":"Social / Commercial","name":"社群內容策略師","en":"Social Content Strategist","scope":"定義社群目標、受眾關係、平台角色、內容支柱、格式、語氣、互動設計與節奏。","deliverables":["social strategy","content pillars","platform role / cadence"],"risk":"貼文零散，沒有長期內容資產與社群關係。"},{"id":16,"phase":"Social / Commercial","name":"社群內容編輯","en":"Social Content Editor","scope":"把素材轉成 IG/FB caption、CTA、hashtags、alt text、carousel/reel/static 發佈內容。","deliverables":["IG/FB captions","CTA/hashtags","posting package"],"risk":"素材有了，但發佈文字與包裝沒有幫內容加分。"},{"id":17,"phase":"Story & Planning","name":"媒體投放策略師","en":"Media Buying Strategist","scope":"前期做輕量 paid-readiness；完整階段做目標、受眾、版位、KPI、A/B test 與預算假設。","deliverables":["media plan","audience segments","A/B variants / KPI"],"risk":"把創意過早做成廣告，或投放時沒有可測試架構。"},{"id":18,"phase":"Storyboard / Motion","name":"動畫導演","en":"Animation Director","scope":"控制角色重量、情緒視覺化、物理表演與 shot narrative purpose。","deliverables":["acting purpose","emotional staging","動作節奏方向"],"risk":"動作有發生，但沒有服務鏡頭敘事與情緒。"},{"id":19,"phase":"Storyboard / Motion","name":"角色表演導演","en":"Character Performance Director","scope":"把角色性格轉為可執行動作、手勢語彙、停頓、情緒克制、負面動作限制與 Kling 表演約束。","deliverables":["Kling acting constraints","negative motion controls","gesture vocabulary"],"risk":"Kling 容易把溫柔變遲緩、笨拙變滑稽，角色表演失真。"},{"id":20,"phase":"Storyboard / Motion","name":"攝影師","en":"Cinematographer","scope":"控制 boards、shots、prompts 的焦段、機位、景深、構圖與視覺可讀性。","deliverables":["shot camera notes","focal length / DOF","composition rules"],"risk":"畫面資訊不清，角色不突出，或鏡頭不利於生成。"},{"id":21,"phase":"Storyboard / Motion","name":"燈光師","en":"Lighting Director","scope":"控制 boards 與 prompts 的主光、補光、背光、色溫、反射、材質反應與環境光行為。","deliverables":["lighting notes","key/fill/rim setup","material light behavior"],"risk":"同一場景在 shot 之間光感不連續，材質不可信。"},{"id":22,"phase":"Storyboard / Motion","name":"美術設計師","en":"Art Director","scope":"控制場景美術、道具、色彩、形狀語言、材質層級、背景克制與 IP 視覺一致性。","deliverables":["scene art direction","props/palette rules","background restraint"],"risk":"場景搶走角色主體，或背景與 IP 氣質不一致。"}],"phaseMeta":{"Brand Core":{"zh":"品牌核心","desc":"先定義品牌真相、世界規則與創作邊界，是後面所有流程的上游。","color":"#f2b35e"},"Character v2":{"zh":"角色聖經 / 一致性","desc":"把角色外觀、材質、表情、姿態、造型與延展規則固定下來。","color":"#71d1c2"},"Story & Planning":{"zh":"故事企劃 / 風格定調","desc":"把品牌與角色規則轉成可拍、可傳播、可進入分鏡的故事方案。","color":"#ff8b73"},"Storyboard / Motion":{"zh":"分鏡 / 動態生成","desc":"把故事變成 boards、shot assets、Kling prompt 與可執行表演。","color":"#8dd3ff"},"Social / Commercial":{"zh":"社群 / 商業輸出","desc":"把內容轉成 IG/FB、投放、商業合作與長期觸及設計。","color":"#f8d66d"}},"groups":[["Brand Core",[1]],["Character v2",[2,3,4,5,6,7,8,9]],["Story & Planning",[10,11,12,14,17]],["Storyboard / Motion",[18,19,20,21,22,13,15,16]]]};
 
-const roleById = new Map(DATA.roles.map(r=>[r.id,r]));
+const roleById   = new Map(DATA.roles.map(r=>[r.id,r]));
 const phaseColor = phase => DATA.phaseMeta[phase]?.color || '#9ba7b5';
 const memberById = new Map(MEMBERS.map(m=>[m.id,m]));
 
-// ── localStorage 存取 ──
-const STORE_KEY = 'sipai_role_members';
-function loadAssignments() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }
-  catch { return {}; }
-}
-function saveAssignments(a) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(a));
-}
-let assignments = loadAssignments(); // { roleId: [memberId, ...] }
+// ── 本地快取（fallback） ──
+const CACHE_KEY = 'sipai_role_members_v2';
+function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch { return {}; } }
+function saveCache(a) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(a)); } catch {} }
+let assignments = loadCache();
 
-function getAssigned(roleId) {
-  return assignments[roleId] || [];
+// ── Supabase CRUD ──
+async function sbFetch(path, opts={}) {
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: HEADERS, ...opts });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.status === 204 ? null : res.json();
 }
-function addMember(roleId, memberId) {
-  if (!assignments[roleId]) assignments[roleId] = [];
-  if (!assignments[roleId].includes(memberId)) {
-    assignments[roleId].push(memberId);
-    saveAssignments(assignments);
+
+async function loadAllAssignments() {
+  setSyncState('syncing');
+  try {
+    const rows = await sbFetch('role_members?select=role_id,member_id');
+    const map = {};
+    rows.forEach(({ role_id, member_id }) => {
+      if (!map[role_id]) map[role_id] = [];
+      map[role_id].push(member_id);
+    });
+    assignments = map;
+    saveCache(assignments);
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Supabase load failed, using cache', e);
+    setSyncState('error');
   }
 }
-function removeMember(roleId, memberId) {
+
+async function addMember(roleId, memberId) {
+  if (!assignments[roleId]) assignments[roleId] = [];
+  if (assignments[roleId].includes(memberId)) return;
+  assignments[roleId].push(memberId);
+  saveCache(assignments);
+  setSyncState('syncing');
+  try {
+    await sbFetch('role_members', {
+      method: 'POST',
+      body: JSON.stringify({ role_id: roleId, member_id: memberId })
+    });
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Supabase write failed', e);
+    setSyncState('error');
+  }
+}
+
+async function removeMember(roleId, memberId) {
   if (!assignments[roleId]) return;
   assignments[roleId] = assignments[roleId].filter(id => id !== memberId);
-  saveAssignments(assignments);
+  saveCache(assignments);
+  setSyncState('syncing');
+  try {
+    await sbFetch(`role_members?role_id=eq.${roleId}&member_id=eq.${memberId}`, { method: 'DELETE' });
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Supabase delete failed', e);
+    setSyncState('error');
+  }
 }
+
+function getAssigned(roleId) { return assignments[roleId] || []; }
 
 // ── render legend ──
 function renderLegend() {
-  const el = document.getElementById('legend');
-  el.innerHTML = Object.entries(DATA.phaseMeta).map(([k,m]) =>
+  document.getElementById('legend').innerHTML = Object.entries(DATA.phaseMeta).map(([k,m]) =>
     `<span class="chip"><span style="color:${m.color}">●</span> ${m.zh}</span>`
   ).join('');
 }
@@ -151,26 +211,37 @@ function renderFlow() {
     </article>`;
   }).join('');
 
-  // 事件綁定
   document.querySelectorAll('.node-btn').forEach(btn => {
     btn.addEventListener('click', () => selectRole(Number(btn.dataset.id)));
   });
-  document.querySelectorAll('.member-select').forEach(sel => {
-    sel.addEventListener('change', e => {
-      const roleId = Number(sel.dataset.roleId);
-      const memberId = sel.value;
-      if (!memberId) return;
-      addMember(roleId, memberId);
-      sel.value = '';
-      refreshNode(roleId);
-      // 如果側欄正在顯示這個 role，也更新側欄成員區
-      const activeBtn = document.querySelector('.node-btn.active');
-      if (activeBtn && Number(activeBtn.dataset.id) === roleId) {
-        updateSideMembers(roleId);
-      }
+
+  // add-btn：toggle popup
+  document.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const roleId = btn.dataset.roleId;
+      const popup = document.getElementById(`popup-${roleId}`);
+      // 關閉其他所有 popup
+      document.querySelectorAll('.add-popup.open').forEach(p => {
+        if (p !== popup) p.classList.remove('open');
+      });
+      popup.classList.toggle('open');
     });
-    // 阻止 select 點擊事件冒泡到 node-btn
-    sel.addEventListener('click', e => e.stopPropagation());
+  });
+
+  // popup-option：選成員
+  document.querySelectorAll('.add-popup-option').forEach(opt => {
+    opt.addEventListener('click', async e => {
+      e.stopPropagation();
+      const roleId = Number(opt.dataset.roleId);
+      const memberId = opt.dataset.memberId;
+      const popup = document.getElementById(`popup-${roleId}`);
+      popup.classList.remove('open');
+      await addMember(roleId, memberId);
+      refreshNode(roleId);
+      const activeBtn = document.querySelector('.node-btn.active');
+      if (activeBtn && Number(activeBtn.dataset.id) === roleId) updateSideMembers(roleId);
+    });
   });
 }
 
@@ -186,34 +257,27 @@ function nodeHTML(r) {
     </span>`;
   }).join('');
 
-  // 過濾已選的成員
   const availableOptions = MEMBERS.filter(m => !assigned.includes(m.id));
   const selectOptions = availableOptions.map(m =>
-    `<option value="${m.id}">${m.name}</option>`
+    `<button class="add-popup-option" data-role-id="${r.id}" data-member-id="${m.id}">${m.name}</button>`
   ).join('');
 
   return `<div class="node-wrap" id="node-wrap-${r.id}" style="--c:${c}">
+    <button class="add-btn" data-role-id="${r.id}" title="加入成員" style="--c:${c}">+</button>
     <button class="node node-btn" data-id="${r.id}" style="--c:${c}">
       <span class="num">${String(r.id).padStart(2,'0')}</span>
       <span class="node-title">${r.name}</span>
       <span class="node-en">${r.en}</span>
       <div class="node-members" id="node-members-${r.id}">${memberTags}</div>
     </button>
-    <div class="member-select-wrap" style="--c:${c}">
-      <select class="member-select" data-role-id="${r.id}">
-        <option value="">＋ 新增成員</option>
-        ${selectOptions}
-      </select>
+    <div class="add-popup" id="popup-${r.id}">
+      ${selectOptions}
     </div>
   </div>`;
 }
 
 function refreshNode(roleId) {
-  const r = roleById.get(roleId);
-  const c = phaseColor(r.phase);
   const assigned = getAssigned(roleId);
-
-  // 更新成員 tags
   const memberArea = document.getElementById(`node-members-${roleId}`);
   if (memberArea) {
     memberArea.innerHTML = assigned.map(mid => {
@@ -224,46 +288,43 @@ function refreshNode(roleId) {
         <span class="remove-btn" data-role="${roleId}" data-member="${mid}" title="移除">✕</span>
       </span>`;
     }).join('');
-    // 重新綁定 remove 事件
-    memberArea.querySelectorAll('.remove-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
+  }
+  // 重建 popup 選項
+  const popup = document.getElementById(`popup-${roleId}`);
+  if (popup) {
+    const available = MEMBERS.filter(m => !assigned.includes(m.id));
+    popup.innerHTML = available.map(m =>
+          `<button class="add-popup-option" data-role-id="${roleId}" data-member-id="${m.id}">${m.name}</button>`
+      ).join('');
+    popup.querySelectorAll('.add-popup-option').forEach(opt => {
+      opt.addEventListener('click', async e => {
         e.stopPropagation();
-        removeMember(Number(btn.dataset.role), btn.dataset.member);
-        refreshNode(Number(btn.dataset.role));
+        const rId = Number(opt.dataset.roleId);
+        const mId = opt.dataset.memberId;
+        popup.classList.remove('open');
+        await addMember(rId, mId);
+        refreshNode(rId);
         const activeBtn = document.querySelector('.node-btn.active');
-        if (activeBtn && Number(activeBtn.dataset.id) === Number(btn.dataset.role)) {
-          updateSideMembers(Number(btn.dataset.role));
-        }
+        if (activeBtn && Number(activeBtn.dataset.id) === rId) updateSideMembers(rId);
       });
     });
   }
-
-  // 更新下拉可選項目
-  const sel = document.querySelector(`.member-select[data-role-id="${roleId}"]`);
-  if (sel) {
-    const available = MEMBERS.filter(m => !assigned.includes(m.id));
-    sel.innerHTML = `<option value="">＋ 新增成員</option>` +
-      available.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  }
 }
 
-function updateSideMembers(roleId) {
+
   const el = document.getElementById('side-members');
   if (!el) return;
   const assigned = getAssigned(roleId);
   const c = phaseColor(roleById.get(roleId).phase);
-  if (assigned.length === 0) {
-    el.innerHTML = `<span class="no-member">尚未指派成員</span>`;
-  } else {
-    el.innerHTML = assigned.map(mid => {
-      const m = memberById.get(mid);
-      if (!m) return '';
-      return `<span class="side-member-tag" style="--c:${c}">
-        <span class="side-member-avatar">${m.short}</span>
-        ${m.name}
-      </span>`;
-    }).join('');
-  }
+  el.innerHTML = assigned.length === 0
+    ? `<span class="no-member">尚未指派成員</span>`
+    : assigned.map(mid => {
+        const m = memberById.get(mid);
+        if (!m) return '';
+        return `<span class="side-member-tag" style="--c:${c}">
+          <span class="side-member-avatar">${m.short}</span>${m.name}
+        </span>`;
+      }).join('');
 }
 
 function selectRole(id) {
@@ -299,33 +360,31 @@ function selectRole(id) {
     <p class="hint">提示：這張圖以「四大流程」呈現，但社群與商業角色會依需求在故事企劃、分鏡、輸出階段交叉介入。</p>`;
 }
 
-// ── 全域 remove 事件委派 ──
+// ── 點空白處關閉 popup ──
 document.addEventListener('click', e => {
+  if (!e.target.closest('.add-popup') && !e.target.closest('.add-btn')) {
+    document.querySelectorAll('.add-popup.open').forEach(p => p.classList.remove('open'));
+  }
+});
+
+// ── 全域 remove 事件委派 ──
+document.addEventListener('click', async e => {
   if (e.target.classList.contains('remove-btn')) {
     e.stopPropagation();
     const roleId = Number(e.target.dataset.role);
     const memberId = e.target.dataset.member;
-    removeMember(roleId, memberId);
+    await removeMember(roleId, memberId);
     refreshNode(roleId);
     const activeBtn = document.querySelector('.node-btn.active');
-    if (activeBtn && Number(activeBtn.dataset.id) === roleId) {
-      updateSideMembers(roleId);
-    }
+    if (activeBtn && Number(activeBtn.dataset.id) === roleId) updateSideMembers(roleId);
   }
 });
 
+// ── 啟動 ──
 renderLegend();
 renderFlow();
 selectRole(1);
-
-// 初始化所有 node 的 remove 按鈕事件
-document.querySelectorAll('.remove-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
-    e.stopPropagation();
-    removeMember(Number(btn.dataset.role), btn.dataset.member);
-    refreshNode(Number(btn.dataset.role));
-  });
-});
+loadAllAssignments().then(() => { renderFlow(); selectRole(1); });
 </script>
 </body>
 </html>

@@ -14,6 +14,11 @@
 }
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden;}
+.breadcrumb{display:flex;align-items:center;gap:10px;padding:14px 60px;font-size:12px;font-family:'DM Mono',monospace;letter-spacing:.05em;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);}
+.breadcrumb a{color:var(--accent-1);text-decoration:none;font-weight:500;transition:opacity .15s;}
+.breadcrumb a:hover{opacity:.7;}
+.breadcrumb .sep{color:var(--muted);font-size:14px;}
+.breadcrumb .current{color:var(--text);}
 header{padding:48px 60px 40px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end;position:relative;}
 header::after{content:'';position:absolute;bottom:-1px;left:60px;width:60px;height:2px;background:var(--accent-1);}
 .header-left h1{font-family:'DM Mono',monospace;font-size:clamp(20px,3vw,30px);font-weight:500;letter-spacing:.04em;line-height:1.2;}
@@ -139,6 +144,11 @@ ul.card-list li strong{color:var(--text);font-weight:500;}
 </style>
 </head>
 <body>
+<nav class="breadcrumb">
+  <a href="index.html">SIPAI.STUDIO</a>
+  <span class="sep">›</span>
+  <span class="current">發展歷程</span>
+</nav>
 <header>
   <div class="header-left">
     <h1>MX&nbsp;<span>IP</span>&nbsp;計畫</h1>

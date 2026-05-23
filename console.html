@@ -82,9 +82,14 @@ button.big-copy.success{background:linear-gradient(180deg,#4ade80,#22c55e)}
 .config-row input:focus{outline:none;border-color:#f2b35e}
 .config-hint{font-size:11px;color:#9ba7b5;margin:0}
 
-.nav{display:flex;gap:8px;margin-bottom:16px;font-size:12px}
-.nav a{color:#9ba7b5;text-decoration:none;padding:6px 11px;background:#171b22;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-weight:700;transition:.15s color,.15s border-color}
-.nav a:hover{color:#f2b35e;border-color:#f2b35e}
+.breadcrumb{display:flex;align-items:center;gap:10px;padding:12px 24px;font-size:12px;letter-spacing:.05em;background:#0f1116;border-bottom:1px solid rgba(255,255,255,.08);font-weight:700;margin:-28px -24px 20px}
+.breadcrumb a{color:#f2b35e;text-decoration:none;transition:opacity .15s}
+.breadcrumb a:hover{opacity:.7}
+.breadcrumb .sep{color:#5a6270;font-size:14px}
+.breadcrumb .current{color:#cfc7bb}
+.breadcrumb .extra{margin-left:auto;color:#5a6270;font-weight:600}
+.breadcrumb .extra a{color:#9ba7b5;font-weight:700}
+.breadcrumb .extra a:hover{color:#f2b35e}
 
 /* ── Slack 設定列 ── */
 .slack-settings{background:#0f1116;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px}
@@ -118,9 +123,12 @@ button.big-copy.success{background:linear-gradient(180deg,#4ade80,#22c55e)}
 <script src="ips.js"></script>
 <script src="roles-data.js"></script>
 <div class="wrap">
-  <div class="nav">
-    <a href="roles.html" id="navRoles">← 開角色互動圖(唯讀)</a>
-  </div>
+  <nav class="breadcrumb">
+    <a href="index.html">SIPAI.STUDIO</a>
+    <span class="sep">›</span>
+    <span class="current">主控台</span>
+    <span class="extra">· <a href="roles.html" id="navRoles">開角色互動圖(唯讀) →</a></span>
+  </nav>
 
   <header class="top">
     <div>

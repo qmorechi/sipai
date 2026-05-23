@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>六大 IP 進度總表｜SIPAI.STUDIO</title>
+<title>六大 IP 進度總表｜MX IP STUDIO</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -72,6 +72,14 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
 .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:18px;transition:color .15s;}
 .back-link:hover{color:var(--accent-1);}
 
+.team-cta{display:flex;align-items:center;gap:18px;margin-top:24px;padding:20px 24px;background:linear-gradient(135deg,rgba(197,164,107,.12),rgba(91,168,158,.08));border:1px solid rgba(197,164,107,.3);border-radius:14px;text-decoration:none;color:inherit;transition:.15s transform, .15s border-color;}
+.team-cta:hover{transform:translateY(-2px);border-color:var(--accent-1);}
+.team-cta-icon{font-size:32px;flex-shrink:0;}
+.team-cta-body{flex:1;min-width:0;}
+.team-cta-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.team-cta-sub{font-size:12px;color:var(--muted);line-height:1.5;}
+.team-cta-arrow{font-size:22px;color:var(--accent-1);font-family:'DM Mono',monospace;flex-shrink:0;}
+
 .other-ips{margin-top:32px;padding-top:24px;border-top:1px dashed var(--border);}
 .other-ips-title{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
 .other-ips-list{display:flex;gap:10px;flex-wrap:wrap;}
@@ -104,7 +112,7 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
 <script>
 const IPS = [
   {
-    id: 'sipai',
+    id: 'sipai', rolesIp: 'SIPAI',
     name: 'SIPAI 生意興龍',
     codename: 'SIPAI · S+',
     tier: '★ 主線',
@@ -115,7 +123,7 @@ const IPS = [
     channels: '#mx-ip-sipai-{brand,character,story,storyboard,meetings}',
   },
   {
-    id: 'citymonsters',
+    id: 'citymonsters', rolesIp: 'CityMonsters',
     name: 'City Monsters 阿灰',
     codename: 'CityMonsters · A-',
     tier: '第二主線',
@@ -126,7 +134,7 @@ const IPS = [
     channels: 'TBD(待加 sipai 以外的 city 子頻道)',
   },
   {
-    id: 'myao',
+    id: 'myao', rolesIp: 'HealingCat',
     name: '全知療癒貓 / 不倒翁',
     codename: 'HealingCat · B+',
     tier: '物件型 IP',
@@ -137,7 +145,7 @@ const IPS = [
     channels: 'TBD',
   },
   {
-    id: 'peekingx',
+    id: 'peekingx', rolesIp: 'PeekingX',
     name: '偷瞄的X',
     codename: 'PeekingX · 概念',
     tier: 'temp · 觀察',
@@ -149,7 +157,7 @@ const IPS = [
     progress: '概念階段,未深入發展',
   },
   {
-    id: 'ctrlz',
+    id: 'ctrlz', rolesIp: 'CtrlZ',
     name: '早知道 Ctrl+Z',
     codename: 'CtrlZ · 概念',
     tier: 'temp · 觀察',
@@ -161,7 +169,7 @@ const IPS = [
     progress: '概念階段,缺正向出口設定',
   },
   {
-    id: 'ahu',
+    id: 'ahu', rolesIp: 'AHu',
     name: '閣樓小精靈 A-Hu',
     codename: 'AHu · 概念',
     tier: 'temp · 觀察',
@@ -182,9 +190,9 @@ const focused = filterIp ? IPS.find(i => i.id === filterIp) : null;
 function renderBreadcrumb() {
   const el = document.getElementById('breadcrumb');
   if (focused) {
-    el.innerHTML = `<a href="index.html">SIPAI.STUDIO</a><span class="sep">›</span><a href="progress.html">進度總表</a><span class="sep">›</span><span class="current">${focused.name}</span>`;
+    el.innerHTML = `<a href="index.html">MX IP STUDIO</a><span class="sep">›</span><a href="progress.html">進度總表</a><span class="sep">›</span><span class="current">${focused.name}</span>`;
   } else {
-    el.innerHTML = `<a href="index.html">SIPAI.STUDIO</a><span class="sep">›</span><span class="current">六大 IP 進度總表</span>`;
+    el.innerHTML = `<a href="index.html">MX IP STUDIO</a><span class="sep">›</span><span class="current">六大 IP 進度總表</span>`;
   }
 }
 
@@ -246,6 +254,14 @@ function renderContent() {
       <div class="single-wrap">
         <a href="progress.html" class="back-link">← 回 6 IP 總覽</a>
         ${ipCardHTML(focused, true)}
+        <a class="team-cta" href="roles.html?ip=${focused.rolesIp}">
+          <div class="team-cta-icon">👥</div>
+          <div class="team-cta-body">
+            <div class="team-cta-title">${focused.name} · 角色團隊</div>
+            <div class="team-cta-sub">22 個專業角色互動圖。看誰扮演哪個角色,或填寫自己想參與的角色</div>
+          </div>
+          <div class="team-cta-arrow">→</div>
+        </a>
         <div class="other-ips">
           <div class="other-ips-title">其他 IP</div>
           <div class="other-ips-list">

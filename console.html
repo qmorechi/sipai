@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MX-IP-Studio · 主控台</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0f1116;color:#fff4e3;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;min-height:100vh;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:28px 24px 60px}
+
+/* ── Header ── */
+header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:24px}
+header.top h1{font-size:28px;margin:0 0 4px;line-height:1.2}
+header.top .subtitle{color:#9ba7b5;font-size:13px;margin:0}
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-left:8px;vertical-align:middle;transition:background .3s}
+.sync-dot.syncing{background:#f2b35e;animation:pulse .8s infinite}
+.sync-dot.error{background:#ff8b73}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── IP 選單 ── */
+.ip-picker{display:flex;align-items:center;gap:10px;background:#171b22;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 14px;flex-wrap:wrap}
+.ip-picker label{font-size:12px;color:#9ba7b5;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.ip-picker select{background:#0f1116;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;color:#fff4e3;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;min-width:240px}
+.ip-picker select:focus{outline:none;border-color:#f2b35e}
+.ip-status-pill{font-size:11px;font-weight:900;padding:3px 9px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase}
+.ip-status-pill.active  {background:rgba(74,222,128,.18);color:#86efac;border:1px solid rgba(74,222,128,.4)}
+.ip-status-pill.paused  {background:rgba(156,163,175,.18);color:#cbd5e0;border:1px solid rgba(156,163,175,.4)}
+.ip-status-pill.archived{background:rgba(75,85,99,.18);color:#9ba7b5;border:1px solid rgba(75,85,99,.4)}
+.ip-status-pill.temp    {background:rgba(248,214,109,.15);color:#f8d66d;border:1px solid rgba(248,214,109,.4)}
+
+/* ── 區塊共用 ── */
+section.block{background:#171b22;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+section.block > h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+section.block .lead{color:#cfc7bb;font-size:13px;margin:0 0 12px;line-height:1.5}
+
+/* ── 進度 ── */
+.progress-stats{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:14px;font-size:14px}
+.progress-stat{display:flex;flex-direction:column;gap:2px}
+.progress-stat .num{font-size:26px;font-weight:900;color:#fff4e3;line-height:1}
+.progress-stat .label{font-size:11px;color:#9ba7b5;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.progress-bar{width:100%;height:10px;background:#0f1116;border-radius:999px;overflow:hidden;margin-top:4px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#f2b35e,#4ade80);transition:width .3s}
+
+/* ── 空缺清單 ── */
+.vacant-list{display:flex;flex-wrap:wrap;gap:6px}
+.vacant-item{background:rgba(255,139,115,.08);border:1px solid rgba(255,139,115,.3);color:#ffe0d8;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.vacant-empty{color:#86efac;font-weight:700;font-size:13px}
+
+/* ── 矩陣 ── */
+.matrix-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
+table.matrix{border-collapse:separate;border-spacing:0;width:100%;min-width:720px;font-size:12px}
+table.matrix th, table.matrix td{padding:6px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,.06)}
+table.matrix thead th{background:#0f1116;position:sticky;top:0;color:#9ba7b5;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:8px 4px}
+table.matrix .role-cell{text-align:left;padding:6px 10px 6px 6px;color:#fff4e3;font-weight:700;white-space:nowrap;min-width:200px}
+table.matrix .role-num{display:inline-grid;place-items:center;width:24px;height:18px;border-radius:999px;background:var(--c);color:#111318;font-weight:950;font-size:10px;margin-right:6px}
+table.matrix .member-cell{cursor:pointer;width:48px;height:34px;user-select:none;transition:.15s background}
+table.matrix .member-cell:hover{background:rgba(255,255,255,.06)}
+table.matrix .member-cell.on{background:rgba(74,222,128,.15);color:#86efac;font-weight:900;font-size:14px}
+table.matrix .member-cell.on:hover{background:rgba(255,139,115,.18);color:#ff8b73}
+table.matrix .total-cell{color:#9ba7b5;font-weight:700;font-size:11px;padding-left:14px;text-align:right}
+table.matrix tfoot th{padding-top:10px;color:#9ba7b5;font-weight:700;font-size:11px}
+
+/* ── 邀請發送 ── */
+.invite-row{background:#0f1116;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.invite-avatar{width:30px;height:30px;border-radius:50%;background:#f2b35e;color:#111318;display:grid;place-items:center;font-weight:900;font-size:12px;flex-shrink:0}
+.invite-info{flex:1;min-width:200px}
+.invite-name{font-size:14px;font-weight:900}
+.invite-url{font-size:11px;color:#9ba7b5;font-family:'SF Mono','Menlo',monospace;word-break:break-all;margin-top:2px}
+.invite-actions{display:flex;gap:6px;flex-wrap:wrap}
+button.copy{background:#242a34;border:1px solid rgba(255,255,255,.15);color:#fff4e3;border-radius:8px;padding:6px 11px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer;transition:.15s border-color,.15s background,.15s color;white-space:nowrap}
+button.copy:hover{border-color:#f2b35e;color:#f2b35e}
+button.copy.success{background:#1b3a2a;border-color:#4ade80;color:#a7f3c4}
+.invite-bulk{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+button.big-copy{flex:1;min-width:200px;background:linear-gradient(180deg,#f2b35e,#e69533);border:none;color:#111318;padding:13px 18px;border-radius:11px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;transition:.15s transform}
+button.big-copy:hover{transform:translateY(-1px)}
+button.big-copy.success{background:linear-gradient(180deg,#4ade80,#22c55e)}
+
+.config-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.config-row label{font-size:11px;color:#9ba7b5;font-weight:900;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.config-row input{flex:1;min-width:240px;background:#0f1116;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 11px;color:#fff4e3;font-family:'SF Mono','Menlo',monospace;font-size:12px}
+.config-row input:focus{outline:none;border-color:#f2b35e}
+.config-hint{font-size:11px;color:#9ba7b5;margin:0}
+
+.nav{display:flex;gap:8px;margin-bottom:16px;font-size:12px}
+.nav a{color:#9ba7b5;text-decoration:none;padding:6px 11px;background:#171b22;border:1px solid rgba(255,255,255,.12);border-radius:8px;font-weight:700;transition:.15s color,.15s border-color}
+.nav a:hover{color:#f2b35e;border-color:#f2b35e}
+
+/* ── Slack 設定列 ── */
+.slack-settings{background:#0f1116;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px}
+.slack-settings label{color:#9ba7b5;font-weight:900;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.slack-settings input{flex:1;min-width:280px;background:#171b22;border:1px solid rgba(255,255,255,.18);border-radius:7px;padding:7px 10px;color:#fff4e3;font-family:'SF Mono','Menlo',monospace;font-size:11px}
+.slack-settings input:focus{outline:none;border-color:#f2b35e}
+.slack-settings .status{font-weight:700;font-size:11px;white-space:nowrap}
+.slack-settings .status.ok{color:#86efac}
+.slack-settings .status.warn{color:#f8d66d}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#171b22;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:24px;max-width:580px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.modal h3{margin:0 0 4px;font-size:18px}
+.modal .modal-sub{color:#9ba7b5;font-size:12px;margin:0 0 14px}
+.modal textarea{width:100%;min-height:150px;background:#0f1116;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:11px 13px;color:#fff4e3;font-family:'SF Mono','Menlo',monospace;font-size:12px;line-height:1.6;resize:vertical}
+.modal textarea:focus{outline:none;border-color:#f2b35e}
+.modal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end}
+.modal-btn{padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.15);background:#242a34;color:#fff4e3;transition:.15s border-color,.15s background}
+.modal-btn:hover{border-color:#9ba7b5}
+.modal-btn.primary{background:#f2b35e;color:#111318;border-color:transparent;font-weight:900}
+.modal-btn.primary:hover{background:#e69533}
+.modal-btn.primary:disabled{opacity:.4;cursor:not-allowed;background:#666}
+.modal-btn.success{background:#4ade80;color:#111318;border-color:transparent}
+
+</style>
+</head>
+<body>
+<script src="members.js"></script>
+<script src="ips.js"></script>
+<script src="roles-data.js"></script>
+<div class="wrap">
+  <div class="nav">
+    <a href="roles.html" id="navRoles">← 開角色互動圖(唯讀)</a>
+  </div>
+
+  <header class="top">
+    <div>
+      <h1>MX-IP-Studio · 主控台<span class="sync-dot" id="syncDot" title="Supabase 連線中"></span></h1>
+      <p class="subtitle">管理 6 個 IP × 11 個成員 × 22 個角色,進度/矩陣/邀請一頁解決</p>
+    </div>
+    <div class="ip-picker">
+      <label for="ipSelect">IP</label>
+      <select id="ipSelect"></select>
+      <span class="ip-status-pill" id="ipStatusPill"></span>
+    </div>
+  </header>
+
+  <section class="block">
+    <h2>📊 進度</h2>
+    <div class="progress-stats" id="progressStats"></div>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div></div>
+  </section>
+
+  <section class="block">
+    <h2>⚠ 還沒人認領的角色</h2>
+    <div class="vacant-list" id="vacantList"></div>
+  </section>
+
+  <section class="block">
+    <h2>🎯 角色 × 成員矩陣</h2>
+    <p class="lead">點任一格切換指派狀態(直接寫 Supabase,即時同步給所有人)。同色直欄代表同一階段。</p>
+    <div class="matrix-wrap">
+      <table class="matrix" id="matrixTable"></table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>📬 邀請發送</h2>
+    <p class="lead">「📤 發 Slack」點開預覽訊息可編輯,確認後一鍵發到 webhook 對應的頻道(通常 <code>#mx-ip-提案</code> 或 <code>#mx-ip-通知</code>)。</p>
+    <div class="config-row">
+      <label for="baseUrl">連結網址前綴</label>
+      <input type="text" id="baseUrl" placeholder="https://mx-ip-studio.mx.design/roles.html">
+    </div>
+    <p class="config-hint">預設用本頁網址推算,改後存 localStorage 下次不用再貼。</p>
+    <div class="slack-settings">
+      <label>Slack Webhook</label>
+      <input type="text" id="slackWebhook" placeholder="https://hooks.slack.com/services/T.../B.../...">
+      <span class="status" id="slackStatus"></span>
+    </div>
+    <div id="inviteList"></div>
+    <div class="invite-bulk">
+      <button class="big-copy" id="sendAll">📤 發送全員通知到 Slack</button>
+    </div>
+  </section>
+</div>
+
+<!-- Slack 發送 Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">傳送 Slack 訊息</h3>
+    <p class="modal-sub" id="modalSub"></p>
+    <textarea id="modalText"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn" id="modalCancel">取消</button>
+      <button class="modal-btn" id="modalCopy">📋 複製</button>
+      <button class="modal-btn primary" id="modalSend">📤 直接發送</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Supabase 設定 ──
+const SB_URL  = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemJ3eGdva212YXloenJ2a3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTY1NTYsImV4cCI6MjA5NDkzMjU1Nn0.7d_pasAywneqOxOHFGlc1dpMJcUv1BDCvhV2jYLaAGE';
+const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+function setSyncState(state) {
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+}
+
+async function sbFetch(path, opts={}) {
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: HEADERS, ...opts });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.status === 204 ? null : res.json();
+}
+
+const phaseColor = phase => ROLE_DATA.phaseMeta[phase]?.color || '#9ba7b5';
+const roleById = new Map(ROLE_DATA.roles.map(r=>[r.id,r]));
+
+// ── State ──
+let currentIpId = localStorage.getItem('console_current_ip') || (IPS.find(i=>i.status==='active')?.id || IPS[0].id);
+let assignments = {};  // role_id → [member_id, member_id...]
+
+// ── 載入指派 ──
+async function loadAssignments() {
+  setSyncState('syncing');
+  try {
+    const rows = await sbFetch(`role_members?ip_id=eq.${encodeURIComponent(currentIpId)}&select=role_id,member_id&order=created_at.asc`);
+    const map = {};
+    rows.forEach(({role_id, member_id}) => {
+      if (!map[role_id]) map[role_id] = [];
+      map[role_id].push(member_id);
+    });
+    assignments = map;
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Supabase load failed', e);
+    setSyncState('error');
+    assignments = {};
+  }
+}
+
+async function toggleAssignment(roleId, memberId) {
+  const has = (assignments[roleId] || []).includes(memberId);
+  setSyncState('syncing');
+  try {
+    if (has) {
+      await sbFetch(`role_members?ip_id=eq.${encodeURIComponent(currentIpId)}&role_id=eq.${roleId}&member_id=eq.${memberId}`, {method:'DELETE'});
+      assignments[roleId] = assignments[roleId].filter(id => id !== memberId);
+    } else {
+      await sbFetch('role_members', {method:'POST', body:JSON.stringify({ip_id:currentIpId, role_id:roleId, member_id:memberId})});
+      if (!assignments[roleId]) assignments[roleId] = [];
+      assignments[roleId].push(memberId);
+    }
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Supabase toggle failed', e);
+    setSyncState('error');
+  }
+}
+
+// ── 渲染:IP 選單 ──
+function renderIpPicker() {
+  const sel = document.getElementById('ipSelect');
+  const statusOrder = {active:1, temp:2, paused:3, archived:4};
+  const sorted = [...IPS].sort((a,b) => (statusOrder[a.status]||9) - (statusOrder[b.status]||9) || a.order_no - b.order_no);
+  sel.innerHTML = sorted.map(ip =>
+    `<option value="${ip.id}" ${ip.id === currentIpId ? 'selected' : ''}>${ip.name}</option>`
+  ).join('');
+  updateIpStatusPill();
+}
+
+function updateIpStatusPill() {
+  const ip = ipById.get(currentIpId);
+  const pill = document.getElementById('ipStatusPill');
+  if (!ip || !pill) return;
+  const labels = {active:'進行中', paused:'暫停', archived:'結案', temp:'觀察中'};
+  pill.className = `ip-status-pill ${ip.status}`;
+  pill.textContent = labels[ip.status] || ip.status;
+}
+
+// ── 渲染:進度 ──
+function renderProgress() {
+  const filled = ROLE_DATA.roles.filter(r => (assignments[r.id] || []).length > 0).length;
+  const total  = ROLE_DATA.roles.length;
+  const vacant = total - filled;
+  const pct = Math.round(filled / total * 100);
+  const totalAssignments = Object.values(assignments).reduce((sum, arr) => sum + arr.length, 0);
+
+  document.getElementById('progressStats').innerHTML = `
+    <div class="progress-stat"><span class="num">${filled}/${total}</span><span class="label">已認領</span></div>
+    <div class="progress-stat"><span class="num" style="color:#ff8b73">${vacant}</span><span class="label">空缺</span></div>
+    <div class="progress-stat"><span class="num">${totalAssignments}</span><span class="label">總指派數</span></div>
+    <div class="progress-stat"><span class="num">${pct}%</span><span class="label">完成率</span></div>
+  `;
+  document.getElementById('progressBarFill').style.width = pct + '%';
+}
+
+// ── 渲染:空缺清單 ──
+function renderVacant() {
+  const vacantRoles = ROLE_DATA.roles.filter(r => (assignments[r.id] || []).length === 0);
+  const el = document.getElementById('vacantList');
+  if (vacantRoles.length === 0) {
+    el.innerHTML = `<span class="vacant-empty">✅ 全員到齊,22 個角色都有人認領了!</span>`;
+    return;
+  }
+  el.innerHTML = vacantRoles.map(r =>
+    `<span class="vacant-item">${String(r.id).padStart(2,'0')} ${r.name}</span>`
+  ).join('');
+}
+
+// ── 渲染:矩陣 ──
+function renderMatrix() {
+  const table = document.getElementById('matrixTable');
+  // 用 groups 順序排列 role(同階段相鄰)
+  const orderedRoles = [];
+  ROLE_DATA.groups.forEach(([phase, ids]) => ids.forEach(id => orderedRoles.push(roleById.get(id))));
+
+  // header
+  const memberHeaders = MEMBERS.map(m => `<th title="${m.name}">${m.short}</th>`).join('');
+  const headHTML = `<thead><tr>
+    <th>角色</th>${memberHeaders}<th class="total-cell">小計</th>
+  </tr></thead>`;
+
+  // body
+  const rows = orderedRoles.map(r => {
+    const c = phaseColor(r.phase);
+    const assigned = assignments[r.id] || [];
+    const cells = MEMBERS.map(m => {
+      const on = assigned.includes(m.id);
+      return `<td class="member-cell ${on ? 'on' : ''}" data-role="${r.id}" data-member="${m.id}" title="${m.name} × ${r.name}">${on ? '✓' : ''}</td>`;
+    }).join('');
+    return `<tr>
+      <td class="role-cell" style="--c:${c}"><span class="role-num">${String(r.id).padStart(2,'0')}</span>${r.name}</td>
+      ${cells}
+      <td class="total-cell">${assigned.length}</td>
+    </tr>`;
+  }).join('');
+
+  // footer:每人的總數
+  const memberTotals = MEMBERS.map(m => {
+    const count = ROLE_DATA.roles.filter(r => (assignments[r.id] || []).includes(m.id)).length;
+    return `<th>${count}</th>`;
+  }).join('');
+  const footHTML = `<tfoot><tr><th>每人小計</th>${memberTotals}<th></th></tr></tfoot>`;
+
+  table.innerHTML = headHTML + '<tbody>' + rows + '</tbody>' + footHTML;
+
+  // 綁定點擊
+  table.querySelectorAll('.member-cell').forEach(cell => {
+    cell.addEventListener('click', async () => {
+      const roleId = Number(cell.dataset.role);
+      const memberId = cell.dataset.member;
+      // 樂觀更新 UI
+      cell.classList.toggle('on');
+      cell.textContent = cell.classList.contains('on') ? '✓' : '';
+      await toggleAssignment(roleId, memberId);
+      // 重 render 同步(處理失敗 rollback / 同步 stats)
+      renderProgress();
+      renderVacant();
+      // 更新該 row + col 的小計
+      updateMatrixTotals();
+    });
+  });
+}
+
+function updateMatrixTotals() {
+  // 重新計算 row 和 col 的小計,直接寫 DOM
+  const rows = document.querySelectorAll('#matrixTable tbody tr');
+  rows.forEach((tr, idx) => {
+    const roleCell = tr.querySelector('.role-cell');
+    // 從 cell 的 dataset 反推 roleId,或從表頭順序(這裡用順序)
+    const cells = tr.querySelectorAll('.member-cell');
+    let count = 0;
+    cells.forEach(c => { if (c.classList.contains('on')) count++; });
+    tr.querySelector('.total-cell').textContent = count;
+  });
+  // 每人小計
+  const footCells = document.querySelectorAll('#matrixTable tfoot th');
+  MEMBERS.forEach((m, i) => {
+    const count = ROLE_DATA.roles.filter(r => (assignments[r.id] || []).includes(m.id)).length;
+    if (footCells[i+1]) footCells[i+1].textContent = count;
+  });
+}
+
+// ── 渲染:邀請發送 ──
+function defaultBase() {
+  return location.href.replace(/console\.html.*$/, 'roles.html').replace(/[?#].*$/, '');
+}
+const baseInput = document.getElementById('baseUrl');
+baseInput.value = localStorage.getItem('mxip_invite_base_url') || defaultBase();
+baseInput.addEventListener('input', () => {
+  const v = baseInput.value.trim();
+  if (v) localStorage.setItem('mxip_invite_base_url', v);
+  else localStorage.removeItem('mxip_invite_base_url');
+  renderInviteList();
+});
+
+function urlFor(memberId) {
+  const base = (baseInput.value.trim() || defaultBase()).replace(/[?#].*$/, '');
+  return `${base}?u=${memberId}&ip=${encodeURIComponent(currentIpId)}`;
+}
+
+function slackMessage(member) {
+  const ip = ipById.get(currentIpId);
+  return `Hi ${member.name},請幫忙在「${ip.name}」的 22 個專業角色裡選你要負責的(一人可多選):\n${urlFor(member.id)}`;
+}
+
+function allMembersMessage() {
+  const ip = ipById.get(currentIpId);
+  const lines = MEMBERS.map(m => `• @${m.id}  ${urlFor(m.id)}`).join('\n');
+  return `Hi 大家,請幫忙在「${ip.name}」的 22 個專業角色裡選你要負責的(一人可多選):\n\n${lines}`;
+}
+
+async function copyToClipboard(text, btn, successText='✓ 已複製') {
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = successText;
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('success'); }, 1500);
+  } catch(e) { alert('複製失敗:' + e.message); }
+}
+
+function renderInviteList() {
+  const list = document.getElementById('inviteList');
+  list.innerHTML = MEMBERS.map(m => `
+    <div class="invite-row">
+      <div class="invite-avatar">${m.short}</div>
+      <div class="invite-info">
+        <div class="invite-name">${m.name}</div>
+        <div class="invite-url">${urlFor(m.id)}</div>
+      </div>
+      <div class="invite-actions">
+        <button class="copy" data-action="url" data-id="${m.id}">📋 連結</button>
+        <button class="copy" data-action="slack" data-id="${m.id}">📤 發 Slack</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('button.copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = MEMBERS.find(x => x.id === btn.dataset.id);
+      if (!m) return;
+      if (btn.dataset.action === 'url') {
+        copyToClipboard(urlFor(m.id), btn);
+      } else {
+        openModal({
+          title: `傳送 Slack 訊息給 ${m.name}`,
+          sub: '會發到 Slack webhook 設定的頻道,內容可編輯',
+          text: slackMessage(m),
+        });
+      }
+    });
+  });
+}
+
+document.getElementById('sendAll').addEventListener('click', () => {
+  openModal({
+    title: '全員 Slack 通知',
+    sub: '11 個人的專屬連結整批發送,內容可編輯',
+    text: allMembersMessage(),
+  });
+});
+
+// ── Slack Webhook 設定 + Modal ──
+const SLACK_KEY = 'mxip_slack_webhook';
+const slackInput = document.getElementById('slackWebhook');
+slackInput.value = localStorage.getItem(SLACK_KEY) || '';
+function updateSlackStatus() {
+  const url = slackInput.value.trim();
+  const el = document.getElementById('slackStatus');
+  if (url) { el.className = 'status ok'; el.textContent = '✓ 已設定,可直接送出'; }
+  else     { el.className = 'status warn'; el.textContent = '⚠ 未設定,modal 只能複製'; }
+  const sendBtn = document.getElementById('modalSend');
+  if (sendBtn) {
+    sendBtn.disabled = !url;
+    sendBtn.title = url ? '' : '請先在上方貼入 Slack Webhook URL';
+  }
+}
+slackInput.addEventListener('input', () => {
+  const v = slackInput.value.trim();
+  if (v) localStorage.setItem(SLACK_KEY, v); else localStorage.removeItem(SLACK_KEY);
+  updateSlackStatus();
+});
+updateSlackStatus();
+
+function openModal({title, sub, text}) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalSub').textContent = sub;
+  document.getElementById('modalText').value = text;
+  updateSlackStatus();
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('modalText').focus(), 50);
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+async function sendToSlack(text) {
+  const url = slackInput.value.trim();
+  if (!url) throw new Error('未設定 Webhook URL');
+  // 用 form-encoded payload= 避開 CORS preflight(Slack incoming webhook 支援此格式)
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'payload=' + encodeURIComponent(JSON.stringify({ text })),
+  });
+  if (!res.ok) throw new Error(`Slack 回應 ${res.status} ${res.statusText}`);
+}
+
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('open')) closeModal();
+});
+
+document.getElementById('modalCopy').addEventListener('click', async e => {
+  const text = document.getElementById('modalText').value;
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已複製';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('success'); }, 1500);
+  } catch(err) { alert('複製失敗:' + err.message); }
+});
+
+document.getElementById('modalSend').addEventListener('click', async e => {
+  const text = document.getElementById('modalText').value.trim();
+  if (!text) return;
+  const btn = e.currentTarget;
+  const orig = btn.textContent;
+  btn.textContent = '發送中…';
+  btn.disabled = true;
+  try {
+    await sendToSlack(text);
+    btn.textContent = '✓ 已發送';
+    btn.classList.add('success');
+    setTimeout(() => {
+      closeModal();
+      btn.textContent = orig;
+      btn.classList.remove('success');
+      updateSlackStatus();
+    }, 1200);
+  } catch(err) {
+    alert('發送失敗:' + err.message);
+    btn.textContent = orig;
+    updateSlackStatus();
+  }
+});
+
+// ── IP 切換 ──
+document.getElementById('ipSelect').addEventListener('change', async e => {
+  currentIpId = e.target.value;
+  localStorage.setItem('console_current_ip', currentIpId);
+  updateIpStatusPill();
+  document.getElementById('navRoles').href = `roles.html?ip=${encodeURIComponent(currentIpId)}`;
+  await loadAssignments();
+  renderProgress();
+  renderVacant();
+  renderMatrix();
+  renderInviteList();
+});
+
+// ── 啟動 ──
+async function init() {
+  renderIpPicker();
+  document.getElementById('navRoles').href = `roles.html?ip=${encodeURIComponent(currentIpId)}`;
+  await loadAssignments();
+  renderProgress();
+  renderVacant();
+  renderMatrix();
+  renderInviteList();
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# macOS metadata (在外接 NTFS/exFAT 硬碟上會大量產生)
+.DS_Store
+._*
+
+# 編輯器
+.vscode/
+.idea/
+
+# Python(build.py 用得到)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 環境變數
+.env
+.env.local

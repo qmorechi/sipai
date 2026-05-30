@@ -138,7 +138,7 @@
 <script src="members.js"></script>
 <!-- 方案 C / P1 登入層（草稿，未啟用前不影響運作） -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth.js?v=4"></script>
+<script src="auth.js?v=5"></script>
 
 <div class="topbar">
   <div class="breadcrumb"><a href="console.html">MX IP STUDIO</a> › <span class="backend">後台</span> › <strong>發布新版本</strong><span class="sync-dot" id="syncDot" title="Supabase 連線中"></span></div>
@@ -608,7 +608,7 @@ document.getElementById('webhookCfg').addEventListener('click', ()=>{
 
 // ── 啟動 ──
 renderWebhookCfg();
-(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(loadData);
+(window.MXIPAuth ? MXIPAuth.init({ gate: true }) : Promise.resolve()).then(loadData);
 // 登入/登出即時重繪：登出停用發版、登入載回版本資料。
 if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(loadData);
 </script>

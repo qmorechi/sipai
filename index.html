@@ -10,8 +10,10 @@
          min-height: 100vh; margin: 0; gap: 0; }
   h1 { font-size: 28px; letter-spacing: .08em; margin-bottom: 8px; }
   h1 span { color: #c5a46b; }
-  p { color: #7a7870; font-size: 13px; margin-bottom: 48px; }
-  .links { display: flex; flex-direction: column; gap: 16px; width: 360px; }
+  p { color: #7a7870; font-size: 13px; margin-bottom: 28px; }
+  .gate-msg { color: #c5a46b; font-size: 13px; margin-bottom: 24px; min-height: 1em; }
+  .links { display: flex; flex-direction: column; gap: 16px; width: 360px; transition: opacity .2s; }
+  .links.locked { opacity: .35; pointer-events: none; filter: grayscale(.4); }
   a { display: block; padding: 20px 28px; background: #161618; border: 1px solid #2a2a30;
       border-radius: 10px; text-decoration: none; color: #e8e6e0; transition: border-color .2s; }
   a:hover { border-color: #c5a46b; }
@@ -25,7 +27,8 @@
 <body>
   <h1>MX IP <span>STUDIO</span></h1>
   <p>六大 IP 計畫 · 主控面板</p>
-  <div class="links">
+  <div class="gate-msg" id="gateMsg">　</div>
+  <div class="links locked" id="links">
     <a href="progress.html">
       <div class="tag">PROGRESS</div>
       <div class="link-title">六大 IP 進度總表</div>
@@ -37,5 +40,19 @@
       <div class="link-desc">從 2026/03 起的會議決策大事紀錄,適合新成員 brief</div>
     </a>
   </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js?v=5"></script>
+<script>
+// 登入門面：未登入鎖住入口卡並提示；登入後放行，若帶 ?next 自動前往原本要去的頁。
+function renderGate() {
+  const logged = !!(window.MXIPAuth && MXIPAuth.currentUser() && MXIPAuth.isAllowed());
+  if (logged && window.MXIPAuth && MXIPAuth.consumeNext && MXIPAuth.consumeNext()) return; // 已跳轉
+  document.getElementById('links').classList.toggle('locked', !logged);
+  document.getElementById('gateMsg').textContent = logged ? '　' : '🔒 請用右上角「用 MX 公司帳號登入」後使用';
+}
+(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(renderGate);
+if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(renderGate);
+</script>
 </body>
 </html>

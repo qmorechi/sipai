@@ -113,7 +113,7 @@ li{margin:.35em 0}
 <script src="roles-data.js"></script>
 <!-- 方案 C / P1 登入層（草稿，未啟用前不影響運作） -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth.js?v=4"></script>
+<script src="auth.js?v=5"></script>
 <nav class="breadcrumb">
   <a href="index.html">MX IP STUDIO</a>
   <span class="sep">›</span>
@@ -533,7 +533,7 @@ function reloadAndRender() {
     selectRole(a ? Number(a.dataset.id) : 1);
   });
 }
-(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve())
+(window.MXIPAuth ? MXIPAuth.init({ gate: true }) : Promise.resolve())
   .then(reloadAndRender);
 // 登入/登出即時重繪：登出立刻清掉指派顯示，登入後載回。
 if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(reloadAndRender);

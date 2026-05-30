@@ -28,6 +28,7 @@
   // mx.design 是 minimax.com.tw 的網域別名 → Google OIDC 回傳的 email 一律是主要地址
   // @minimax.com.tw（不是別名 @mx.design）。故允許網域 = minimax.com.tw。
   const ALLOWED_DOMAIN = 'minimax.com.tw';
+  const HOME_URL = 'index.html';   // 單一入口/登出歸位點
   const WRITE_VERBS = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
   if (!global.supabase || !global.supabase.createClient) {
@@ -95,6 +96,11 @@
     await sb.auth.signOut();
     _session = null;
     if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
+    // 單一入口：登出一律回首頁門面（除非已在首頁）。
+    if (!/(^|\/)index\.html?($|\?|#)/.test(location.pathname) && location.pathname !== '/') {
+      location.href = HOME_URL;
+      return;
+    }
     renderBar();
   }
 
@@ -175,9 +181,27 @@
     _changeListeners.forEach(function (cb) { try { cb(_session); } catch (e) { console.error('[auth] onChange listener error', e); } });
   }
 
+  // 給 index 門面用：已登入且網址帶 ?next 就送回原本要去的頁。回傳是否已跳轉。
+  function consumeNext() {
+    if (!(currentUser() && isAllowed())) return false;
+    try {
+      const next = new URL(location.href).searchParams.get('next');
+      if (next) { location.replace(decodeURIComponent(next)); return true; }
+    } catch (e) { /* noop */ }
+    return false;
+  }
+
   // 頁面載入呼叫一次。回傳 session（可能為 null）。
-  async function init() {
+  // opts.gate=true：受保護頁，未登入（或非公司帳號）一律導回 index.html 登入，
+  // 並把原本要去的網址帶在 ?next，登入後由 index 送回。
+  async function init(opts) {
+    opts = opts || {};
     await refreshSession();
+    if (opts.gate && !(currentUser() && isAllowed())) {
+      const next = encodeURIComponent(location.pathname + location.search + location.hash);
+      location.replace(HOME_URL + '?next=' + next);
+      return _session;
+    }
     // 清掉網址列殘留的 OAuth error 參數（前次失敗留下的，會擋住下次登入）。
     // 在 refreshSession 之後做，確保 detectSessionInUrl 已先處理過 hash token。
     try {
@@ -201,8 +225,8 @@
   }
 
   global.MXIPAuth = {
-    init, signIn, signOut, requireLogin, guardWrite, authHeaders, onChange,
+    init, signIn, signOut, requireLogin, guardWrite, authHeaders, onChange, consumeNext,
     currentUser, currentEmail, accessToken, isAllowed, refreshSession,
-    SB_URL, SB_ANON,
+    SB_URL, SB_ANON, HOME_URL,
   };
 })(window);

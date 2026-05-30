@@ -257,6 +257,9 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
 <script src="members.js"></script>
 <script src="ips.js"></script>
 <script src="roles-data.js"></script>
+<!-- 方案 C / P1 登入層（草稿，未啟用前不影響運作） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <div class="wrap">
   <nav class="breadcrumb">
     <a href="index.html">SIPAI.STUDIO</a>
@@ -388,7 +391,12 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
 // ── Supabase 設定 ──
 const SB_URL  = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemJ3eGdva212YXloenJ2a3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTY1NTYsImV4cCI6MjA5NDkzMjU1Nn0.7d_pasAywneqOxOHFGlc1dpMJcUv1BDCvhV2jYLaAGE';
-const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+// 方案 C：headers 改由 auth.js 動態產生（登入帶使用者 JWT，否則 anon）。
+function reqHeaders() {
+  return (window.MXIPAuth && MXIPAuth.authHeaders)
+    ? MXIPAuth.authHeaders()
+    : { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+}
 
 function setSyncState(state) {
   const dot = document.getElementById('syncDot');
@@ -397,7 +405,10 @@ function setSyncState(state) {
 }
 
 async function sbFetch(path, opts={}) {
-  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: HEADERS, ...opts });
+  if (window.MXIPAuth && await MXIPAuth.guardWrite(opts)) {
+    throw new Error('auth-required');
+  }
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: reqHeaders(), ...opts });
   if (!res.ok) throw new Error(`${res.status}`);
   return res.status === 204 ? null : res.json();
 }
@@ -1044,7 +1055,7 @@ async function init() {
   renderMatrix();
   renderInviteList();
 }
-init();
+(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(init);
 </script>
 </body>
 </html>

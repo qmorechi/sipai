@@ -111,6 +111,9 @@ li{margin:.35em 0}
 <script src="members.js"></script>
 <script src="ips.js"></script>
 <script src="roles-data.js"></script>
+<!-- 方案 C / P1 登入層（草稿，未啟用前不影響運作） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <nav class="breadcrumb">
   <a href="index.html">MX IP STUDIO</a>
   <span class="sep">›</span>
@@ -135,7 +138,13 @@ li{margin:.35em 0}
 // ── Supabase 設定 ──
 const SB_URL  = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemJ3eGdva212YXloenJ2a3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTY1NTYsImV4cCI6MjA5NDkzMjU1Nn0.7d_pasAywneqOxOHFGlc1dpMJcUv1BDCvhV2jYLaAGE';
-const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+// 方案 C：headers 改由 auth.js 動態產生（登入帶使用者 JWT，否則 anon）。
+// 未載入 auth.js 時退回原本的 anon-only headers，確保舊行為不變。
+function reqHeaders() {
+  return (window.MXIPAuth && MXIPAuth.authHeaders)
+    ? MXIPAuth.authHeaders()
+    : { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+}
 
 function setSyncState(state) {
   const dot = document.getElementById('syncDot');
@@ -175,7 +184,11 @@ let assignments = loadCache();
 
 // ── Supabase CRUD ──
 async function sbFetch(path, opts={}) {
-  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: HEADERS, ...opts });
+  // 方案 C：寫入動作要登入（RLS 啟用後生效）。未登入則引導登入並中止本次寫入。
+  if (window.MXIPAuth && await MXIPAuth.guardWrite(opts)) {
+    throw new Error('auth-required');
+  }
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: reqHeaders(), ...opts });
   if (!res.ok) throw new Error(`${res.status}`);
   return res.status === 204 ? null : res.json();
 }
@@ -504,7 +517,9 @@ renderIdentityBadge();
 renderFlow();
 renderMyPanel();
 selectRole(1);
-loadAllAssignments().then(() => { renderFlow(); renderMyPanel(); selectRole(1); });
+(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve())
+  .then(loadAllAssignments)
+  .then(() => { renderFlow(); renderMyPanel(); selectRole(1); });
 </script>
 </body>
 </html>

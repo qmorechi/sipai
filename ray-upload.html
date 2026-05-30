@@ -136,6 +136,9 @@
 </head>
 <body>
 <script src="members.js"></script>
+<!-- 方案 C / P1 登入層（草稿，未啟用前不影響運作） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 
 <div class="topbar">
   <div class="breadcrumb"><a href="console.html">MX IP STUDIO</a> › <span class="backend">後台</span> › <strong>發布新版本</strong><span class="sync-dot" id="syncDot" title="Supabase 連線中"></span></div>
@@ -286,7 +289,12 @@
 // ── Supabase 設定（與 roles.html / console.html 同一專案）──
 const SB_URL  = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemJ3eGdva212YXloenJ2a3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTY1NTYsImV4cCI6MjA5NDkzMjU1Nn0.7d_pasAywneqOxOHFGlc1dpMJcUv1BDCvhV2jYLaAGE';
-const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+// 方案 C：headers 改由 auth.js 動態產生（登入帶使用者 JWT，否則 anon）。
+function reqHeaders() {
+  return (window.MXIPAuth && MXIPAuth.authHeaders)
+    ? MXIPAuth.authHeaders()
+    : { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+}
 
 const WEBHOOK_KEY = 'mxip_ray_webhook_url';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -298,7 +306,10 @@ function setSyncState(state){
 }
 
 async function sbFetch(path, opts={}){
-  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: HEADERS, ...opts });
+  if (window.MXIPAuth && await MXIPAuth.guardWrite(opts)) {
+    throw new Error('auth-required');
+  }
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: reqHeaders(), ...opts });
   if(!res.ok){ const t = await res.text().catch(()=> ''); throw new Error(`${res.status} ${t}`.trim()); }
   return res.status === 204 ? null : res.json();
 }
@@ -587,7 +598,7 @@ document.getElementById('webhookCfg').addEventListener('click', ()=>{
 
 // ── 啟動 ──
 renderWebhookCfg();
-loadData();
+(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(loadData);
 </script>
 </body>
 </html>

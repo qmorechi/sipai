@@ -85,6 +85,13 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
 .other-ips-list{display:flex;gap:10px;flex-wrap:wrap;}
 .other-ips-list a{font-size:12px;padding:6px 13px;background:var(--surface);border:1px solid var(--border);border-radius:999px;color:var(--muted);text-decoration:none;transition:.15s;}
 .other-ips-list a:hover{border-color:var(--accent-1);color:var(--accent-1);}
+.ipbar{margin:14px 0 4px;}
+.ipbar-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px;}
+.ipbar-top b{color:var(--c);font-size:14px;}
+.ipbar-track{height:8px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;}
+.ipbar-track>i{display:block;height:100%;background:var(--c);transition:width .4s;}
+.ipbar-meta{font-size:11px;color:var(--muted);margin-top:6px;}
+.ipbar-empty{font-size:12px;color:var(--muted);font-style:italic;margin:10px 0;}
 </style>
 </head>
 <body>
@@ -109,6 +116,10 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
   <div id="content"></div>
 </div>
 
+<script src="vendor/supabase.js"></script>
+<script src="auth.js?v=9"></script>
+<script src="roles-data.js"></script>
+<script src="skill-flows.js"></script>
 <script>
 const IPS = [
   {
@@ -239,6 +250,7 @@ function ipCardHTML(ip, detail=false) {
       <span class="status-pill ${ip.tierClass}">${ip.tier}</span>
     </div>
     <div class="lead">${ip.lead}</div>
+    ${ip.active ? `<div class="ipbar" id="ipbar-${ip.id}"></div>` : ''}
     ${fullSections}
     ${footer}
   </${tag}>`;
@@ -279,6 +291,51 @@ function renderContent() {
 renderBreadcrumb();
 renderHeader();
 renderContent();
+
+// ── 從 skill_runs 把個人貢獻聚合成每個 IP 的真實完成度 ──
+function renderBar(pct, done, total, wkN, memN) {
+  if (!total) return '<div class="ipbar-empty">尚無成員指派角色</div>';
+  return '<div class="ipbar-top"><span>實質完成度（交付項覆蓋率）</span><span><b>' + pct + '%</b>　完成角色 ' + done + '/' + total + '</span></div>'
+    + '<div class="ipbar-track"><i style="width:' + pct + '%"></i></div>'
+    + '<div class="ipbar-meta">本週更新 ' + wkN + ' 角色　·　參與成員 ' + memN + ' 人</div>';
+}
+async function loadProgress() {
+  if (!window.MXIPAuth) return;
+  try { await MXIPAuth.init(); } catch (e) { return; }
+  const SB = MXIPAuth.SB_URL;
+  for (const ip of IPS) {
+    if (!ip.active) continue;
+    const el = document.getElementById('ipbar-' + ip.id);
+    if (!el) continue;
+    try {
+      const [aR, rR] = await Promise.all([
+        fetch(SB + '/rest/v1/role_members?ip_id=eq.' + encodeURIComponent(ip.rolesIp) + '&select=role_id,member_id', { headers: MXIPAuth.authHeaders() }),
+        fetch(SB + '/rest/v1/skill_runs?ip_id=eq.' + encodeURIComponent(ip.rolesIp) + '&select=member_id,skill_id,updated_at,coverage:responses->__coverage', { headers: MXIPAuth.authHeaders() }),
+      ]);
+      const assigns = aR.ok ? await aR.json() : [];
+      const runs = rR.ok ? await rR.json() : [];
+      const rmap = {}; runs.forEach(x => { rmap[x.member_id + '|' + x.skill_id] = x; });
+      const wk = Date.now() - 7 * 864e5;
+      let sumCov = 0, sumTot = 0, done = 0, wkN = 0; const mem = new Set();
+      assigns.forEach(a => {
+        mem.add(a.member_id);
+        const sk = (typeof ROLE_SKILL !== 'undefined') ? ROLE_SKILL[a.role_id] : null;
+        const role = (typeof ROLE_DATA !== 'undefined') ? ROLE_DATA.roles.find(r => r.id === a.role_id) : null;
+        const total = (role && role.deliverables) ? role.deliverables.length : 0;
+        const run = sk ? rmap[a.member_id + '|' + (sk + '#' + a.role_id)] : null;
+        const cov = (run && Array.isArray(run.coverage)) ? run.coverage : [];
+        const covered = cov.filter(c => c && c.status === 'covered').length;
+        const partial = cov.filter(c => c && c.status === 'partial').length;
+        sumCov += covered + 0.5 * partial; sumTot += total;
+        if (total && covered >= total) done++;
+        if (run && run.updated_at && new Date(run.updated_at).getTime() >= wk) wkN++;
+      });
+      const pct = sumTot ? Math.round(sumCov / sumTot * 100) : 0;
+      el.innerHTML = renderBar(pct, done, assigns.length, wkN, mem.size);
+    } catch (e) { /* leave empty */ }
+  }
+}
+loadProgress();
 </script>
 </body>
 </html>

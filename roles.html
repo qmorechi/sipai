@@ -43,7 +43,11 @@ button.node.active{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,
 .apply-tag:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(242,179,94,.5)}
 
 /* ── 側欄 ── */
-.side{position:sticky;top:0;height:100vh;border-left:1px solid rgba(255,255,255,.12);background:#171b22;padding:28px;overflow:auto}
+.side{position:sticky;top:0;height:100vh;border-left:1px solid rgba(255,255,255,.12);background:#171b22;padding:28px;overflow:auto;transition:width .2s,padding .2s}
+.app.detail-collapsed{grid-template-columns:minmax(780px,1fr) 0}
+.app.detail-collapsed .side{width:0;padding:0;border-left:0;overflow:hidden}
+.detail-toggle{position:fixed;top:54px;right:14px;z-index:60;font:800 12px/1 system-ui,sans-serif;padding:7px 12px;border-radius:8px;background:#242a34;border:1px solid rgba(255,255,255,.22);color:#f2b35e;cursor:pointer}
+.detail-toggle:hover{border-color:#f2b35e}
 .panel-kicker{font-size:13px;letter-spacing:.12em;color:#f2b35e;text-transform:uppercase;font-weight:950;margin:0 0 12px}
 .side h2{font-size:30px;margin:0 0 6px;line-height:1.15}
 .side .en{color:#b9c2cf;font-weight:800;margin-bottom:18px}
@@ -134,6 +138,8 @@ li{margin:.35em 0}
   </main>
   <aside class="side" id="detail"></aside>
 </div>
+<button class="detail-toggle" id="detailToggle" title="收合/展開右側角色詳情，避免在筆電上遮住角色欄" onclick="(function(b){var a=document.querySelector('.app');var c=a.classList.toggle('detail-collapsed');b.textContent=c?'⟨ 展開詳情':'⟩ 收合詳情';try{localStorage.setItem('mxip_roles_detail_collapsed',c?'1':'0')}catch(e){}})(this)">⟩ 收合詳情</button>
+<script>try{if(localStorage.getItem('mxip_roles_detail_collapsed')==='1'){document.querySelector('.app').classList.add('detail-collapsed');var _b=document.getElementById('detailToggle');if(_b)_b.textContent='⟨ 展開詳情';}}catch(e){}</script>
 <script>
 // ── Supabase 設定 ──
 const SB_URL  = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';

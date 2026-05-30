@@ -11,6 +11,11 @@
   html, body { height:100%; }
   body { font-family:'Noto Sans TC',system-ui,sans-serif; background:var(--bg); color:var(--txt);
          margin:0; display:flex; flex-direction:column; }
+  .breadcrumb { display:flex; align-items:center; gap:10px; padding:10px 28px; font-size:12px; letter-spacing:.05em; border-bottom:1px solid var(--line); background:rgba(0,0,0,.25); font-weight:700; flex:0 0 auto; }
+  .breadcrumb a { color:var(--gold); text-decoration:none; }
+  .breadcrumb a:hover { opacity:.7; }
+  .breadcrumb .sep { color:#5a6270; font-size:14px; }
+  .breadcrumb .current { color:var(--dim); }
   header { padding:16px 28px 12px; border-bottom:1px solid var(--line); flex:0 0 auto; }
   h1 { font-size:19px; letter-spacing:.06em; margin:0 0 2px; }
   h1 span { color:var(--gold); }
@@ -56,6 +61,13 @@
   .s-review{ background:rgba(242,179,94,.16); color:var(--warn); }
   .s-done{ background:rgba(113,209,194,.18); color:var(--ok); }
   .wk { color:var(--ok); font-weight:700; font-size:11px; }
+  .gday { margin-bottom:20px; }
+  .gday h3 { font-size:13px; color:var(--gold); margin:0 0 10px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .gday h3 span { color:var(--dim); font-weight:400; font-size:11px; }
+  .gimgs { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .gitem img { width:100%; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--line); cursor:pointer; display:block; }
+  .gitem img:hover { border-color:var(--gold); }
+  .gcap { font-size:10px; color:var(--dim); margin-top:4px; line-height:1.35; }
 
   /* 進度細表（admin）*/
   .ptable { width:100%; border-collapse:collapse; font-size:13px; max-width:880px; }
@@ -108,6 +120,7 @@
 </style>
 </head>
 <body>
+<nav class="breadcrumb"><a href="index.html">MX IP STUDIO</a> <span class="sep">›</span> <span class="current">Skill Runner</span></nav>
 <header>
   <h1>MX IP <span>STUDIO</span> · Skill Runner</h1>
   <div class="sub">你選的協作角色都在這。點一張磚塊，AI 顧問只帶你做那個角色那塊 —— 不是空白表單。</div>
@@ -117,6 +130,7 @@
 
 <div class="picker">
   <div class="field"><label>IP 計畫</label><select id="ipSel"></select></div>
+  <button id="rolesLink" style="margin-left:auto" title="一次性選你負責的角色；之後隨時回來檢索或調整">🗂 角色選擇 / 總覽</button>
 </div>
 
 <div id="runnerArea" style="flex:1 1 auto; min-height:0; display:flex; flex-direction:column;"></div>
@@ -218,6 +232,7 @@ async function renderHome(){
   const pct=sumTot?Math.round(sumCov/sumTot*100):0;
   let html='<div class="home"><div class="home-top">'
     +'<div class="pbar-wrap"><div class="pbar-top"><span>'+(T.isAdmin?'全部角色':'我的協作角色')+'　實質完成度（交付項覆蓋率）</span><span><b>'+pct+'%</b>　完成角色 '+done+' / '+ids.length+'</span></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>'
+    + '<button id="galleryBtn">🖼 圖檔牆</button>'
     + (T.isAdmin?'<button id="teamBtn">📊 全 IP 進度表</button>':'')
     + '</div><div class="tiles">'
     + ids.map(id=>{ const r=roleById(id); if(!r) return ''; const c=cmap[id]; const sk=ROLE_SKILL[id];
@@ -229,6 +244,46 @@ async function renderHome(){
   area.innerHTML=html;
   document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>openRole(+t.dataset.id));
   if($('teamBtn')) $('teamBtn').onclick=()=>renderTeamTable();
+  if($('galleryBtn')) $('galleryBtn').onclick=()=>renderGallery();
+}
+
+// ── 圖檔參考牆：依日期分組，保留完整歷史供前後比較（最新不一定最好）──
+async function renderGallery(){
+  T.view='gallery';
+  const area=$('runnerArea');
+  area.innerHTML='<div class="empty">載入圖檔中…</div>';
+  let runs=[];
+  try{
+    const q=T.isAdmin?'':'&member_id=eq.'+encodeURIComponent(memberId());
+    const r=await fetch(SB+'/rest/v1/skill_runs?ip_id=eq.'+encodeURIComponent(T.ip)+q+'&select=member_id,skill_id,updated_at,responses&order=updated_at.desc&limit=40',{headers:MXIPAuth.authHeaders()});
+    if(r.ok) runs=await r.json();
+  }catch(e){}
+  const items=[];
+  runs.forEach(run=>{
+    const ch=(run.responses&&run.responses.__chat)||[];
+    const rid=(run.skill_id&&run.skill_id.indexOf('#')>=0)?+run.skill_id.split('#')[1]:null;
+    const roleName=rid?((roleById(rid)||{}).name||('角色'+rid)):((SKILL_FLOWS[run.skill_id]||{}).label||run.skill_id);
+    ch.forEach(m=>{
+      if(m.images&&m.images.length){
+        const ts=m.ts||(run.updated_at?new Date(run.updated_at).getTime():Date.now());
+        m.images.forEach(src=>{ if(src) items.push({ src:src, ts:ts, role:roleName, member:run.member_id }); });
+      }
+    });
+  });
+  items.sort((a,b)=>b.ts-a.ts);
+  const groups={};
+  items.forEach(it=>{ const d=new Date(it.ts); const key=d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); (groups[key]=groups[key]||[]).push(it); });
+  const keys=Object.keys(groups).sort().reverse();
+  let html='<div class="home"><div class="home-top"><button id="backBtn3">← 我的角色</button>'
+    +'<div style="font-size:15px;font-weight:700;align-self:center">🖼 圖檔參考牆 · '+esc(ipName(T.ip))+'　<span style="font-size:11px;color:var(--dim);font-weight:400">依日期排，可回頭前後比較</span></div></div>';
+  if(!items.length){ html+='<div class="empty">這個 IP 還沒有上傳過圖檔。<br>對談時用 📎 上傳圖/手稿，就會自動收進這裡。</div></div>'; area.innerHTML=html; if($('backBtn3'))$('backBtn3').onclick=()=>renderHome(); return; }
+  keys.forEach(k=>{ html+='<div class="gday"><h3>'+k+'　<span>'+groups[k].length+' 張</span></h3><div class="gimgs">'
+    + groups[k].map(it=>'<div class="gitem"><img src="'+it.src+'" loading="lazy" title="點擊放大"><div class="gcap">'+esc(it.role)+'　·　'+esc(it.member)+'　'+new Date(it.ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})+'</div></div>').join('')
+    + '</div></div>'; });
+  html+='</div>';
+  area.innerHTML=html;
+  if($('backBtn3')) $('backBtn3').onclick=()=>renderHome();
+  document.querySelectorAll('.gitem img').forEach(img=>{ img.onclick=()=>{ const w=window.open(''); if(w){ w.document.title='圖檔'; w.document.body.style.margin='0'; w.document.body.style.background='#0d0d0f'; const i=w.document.createElement('img'); i.src=img.src; i.style.maxWidth='100%'; w.document.body.appendChild(i); } }; });
 }
 
 // ── admin 團隊細表 ──
@@ -318,6 +373,18 @@ function buildBrief(){
 }
 function buildRoleFocus(){ if(!T.roleId) return null; const r=roleById(T.roleId); if(!r) return null;
   return { id:r.id, name:r.name, en:r.en, scope:r.scope, deliverables:r.deliverables, risk:r.risk }; }
+// 交件通知（單向推 Slack 戰報；fire-and-forget，不阻塞 UI）
+async function notifyDone(){
+  try{
+    const r=T.roleId?roleById(T.roleId):null;
+    const role=r?r.name:((SKILL_FLOWS[T.skill]||{}).label||T.skill);
+    const items=(r&&r.deliverables)||[]; const cov=(T.run&&T.run.responses&&T.run.responses.__coverage)||[];
+    const covered=items.filter((d,i)=>cov[i]&&cov[i].status==='covered').length;
+    const pct=items.length?Math.round(covered/items.length*100):100;
+    await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(),
+      body:JSON.stringify({ action:'notify', event:'role_done', member:memberId(), ipName:ipName(T.ip), roleName:role, pct:pct }) });
+  }catch(e){}
+}
 async function callConsult(){
   const arr=chat();
   const msgs=arr.map(m=>({ role:m.role, content:m.content }));
@@ -390,7 +457,7 @@ function wire(){
   if($('deliverBtn')) $('deliverBtn').onclick=()=>doSend('請把我這個角色目前累積的成果，彙整成一份乾淨、可直接交付的 Markdown deliverable。');
   if($('exportMd')) $('exportMd').onclick=exportMarkdown;
   if($('restartBtn')) $('restartBtn').onclick=restart;
-  if($('statusSel')) $('statusSel').onchange=(e)=>{ T.run.status=e.target.value; saveRun(); };
+  if($('statusSel')) $('statusSel').onchange=(e)=>{ const prev=T.run.status; T.run.status=e.target.value; saveRun(); if(e.target.value==='done'&&prev!=='done') notifyDone(); };
 }
 async function doSend(forced){
   if(T.busy) return;
@@ -398,7 +465,7 @@ async function doSend(forced){
   const imgs=T.pending.slice(); const docs=T.pendingDocs.slice();
   if(!text && !imgs.length && !docs.length) return;
   T.lastDocs=docs;
-  chat().push({ role:'user', content:text||'（請看我上傳的附件）', images:imgs, docNames:docs.map(d=>d.name) }); T.pending=[]; T.pendingDocs=[]; T.busy=true; renderChat(); saveRun();
+  chat().push({ role:'user', content:text||'（請看我上傳的附件）', images:imgs, docNames:docs.map(d=>d.name), ts:Date.now() }); T.pending=[]; T.pendingDocs=[]; T.busy=true; renderChat(); saveRun();
   try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; if(res.roster && T.skill==='brand-core') T.run.responses.__roster=res.roster; }
   catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可先重試；若持續，通知管理者。）' }); }
   T.busy=false; renderChat(); saveRun();
@@ -432,6 +499,7 @@ async function boot(){
   fillIpSelect();
   T.ip=$('ipSel').value;
   $('ipSel').onchange=onIpChange;
+  if($('rolesLink')) $('rolesLink').onclick=()=>{ location.href='roles.html?u='+encodeURIComponent(memberId())+'&ip='+encodeURIComponent(T.ip||''); };
   await renderHome();
   MXIPAuth.onChange(s=>{ if(!(s&&s.user)) $('runnerArea').innerHTML='<div class="empty">已登出。</div>'; });
 }

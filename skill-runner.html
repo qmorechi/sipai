@@ -135,7 +135,7 @@ const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
 const KICKOFF = '請開始。依我這個「指定角色」的職責，用顧問的方式一步步帶我產出我這塊的 deliverable：先用一兩句說明你是我的什麼角色顧問、會怎麼帶我，然後直接問我第一個、最該先決定的問題。一次只問一件事。';
 const LBL = { todo:'未開始', doing:'進行中', review:'送審', done:'完成' };
 
-const T = { ip:null, isAdmin:false, view:'home', skill:null, roleId:null, run:null, busy:false, online:true, pending:[] };
+const T = { ip:null, isAdmin:false, view:'home', skill:null, roleId:null, run:null, busy:false, online:true, pending:[], roster:null };
 
 function $(id){ return document.getElementById(id); }
 function memberId(){ const e=MXIPAuth.currentEmail(); return e?e.split('@')[0]:null; }
@@ -257,9 +257,20 @@ async function renderTeamTable(){
 }
 
 // ── 進入某角色的對談 ──
+async function fetchIpRoster(ip){
+  try{
+    const r=await fetch(SB+'/rest/v1/skill_runs?ip_id=eq.'+encodeURIComponent(ip)+'&skill_id=like.brand-core*&select=roster:responses->__roster',{headers:MXIPAuth.authHeaders()});
+    if(!r.ok) return null;
+    const rows=await r.json();
+    for(const row of rows){ if(Array.isArray(row.roster)&&row.roster.length) return row.roster; }
+    return null;
+  }catch(e){ return null; }
+}
 async function openRole(id){
   if(T.busy) return;
   T.roleId=id; T.skill=ROLE_SKILL[id]; T.view='chat';
+  // 故事/分鏡流程：帶入該 IP 由品牌核心產出的角色名冊，讓顧問「養完梗才選角」。
+  T.roster = (T.skill==='storyboard-workflow') ? await fetchIpRoster(T.ip) : null;
   await loadRun(); await startIfEmpty();
 }
 
@@ -306,10 +317,10 @@ async function callConsult(){
   const msgs=arr.map(m=>({ role:m.role, content:m.content }));
   const last=arr[arr.length-1];
   const images=(last&&last.role==='user'&&Array.isArray(last.images))?last.images.map(toPayload).filter(Boolean):[];
-  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(), body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), messages:msgs, images:images }) });
+  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(), body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), roster:T.roster, messages:msgs, images:images }) });
   let data={}; try{ data=await r.json(); }catch(e){}
   if(!r.ok || data.error){ const d=data.error||('HTTP '+r.status); throw new Error(typeof d==='string'?d:JSON.stringify(d)); }
-  return { text:(data.text||'').trim()||'（顧問沒有回覆內容，請再試一次）', coverage:(Array.isArray(data.coverage)?data.coverage:null) };
+  return { text:(data.text||'').trim()||'（顧問沒有回覆內容，請再試一次）', coverage:(Array.isArray(data.coverage)?data.coverage:null), roster:(Array.isArray(data.roster)?data.roster:null) };
 }
 
 // ── 對談渲染 ──
@@ -375,14 +386,14 @@ async function doSend(forced){
   const imgs=T.pending.slice();
   if(!text && !imgs.length) return;
   chat().push({ role:'user', content:text||'（請看我上傳的參考圖）', images:imgs }); T.pending=[]; T.busy=true; renderChat(); saveRun();
-  try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; }
+  try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; if(res.roster && T.skill==='brand-core') T.run.responses.__roster=res.roster; }
   catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可先重試；若持續，通知管理者。）' }); }
   T.busy=false; renderChat(); saveRun();
 }
 async function startIfEmpty(){
   if(chat().length>0){ renderChat(); return; }
   chat().push({ role:'user', content:KICKOFF, kickoff:true }); T.busy=true; renderChat(); saveRun();
-  try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; }
+  try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; if(res.roster && T.skill==='brand-core') T.run.responses.__roster=res.roster; }
   catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（後端可能尚未部署完成，稍後按「↻ 重新開始」再試。）' }); }
   T.busy=false; renderChat(); saveRun();
 }

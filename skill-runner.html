@@ -97,6 +97,9 @@
   .thumb button { position:absolute; top:-6px; right:-6px; width:18px; height:18px; padding:0; border-radius:50%; background:#5a3340; color:#fcc; border:0; font-size:12px; line-height:1; }
   .bimgs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
   .bimgs img { max-width:180px; max-height:180px; border-radius:8px; border:1px solid var(--line); }
+  .doc-chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:5px 9px; border-radius:7px; background:var(--panel); border:1px solid var(--line); color:var(--txt); }
+  .doc-chip button { border:0; background:none; color:#fcc; cursor:pointer; padding:0 0 0 4px; font-size:12px; }
+  .bdocs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
   .toolbar { flex:0 0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; border-top:1px solid var(--line); padding:10px 0; margin-bottom:6px; }
   .savestate { font-size:11px; color:var(--dim); margin-left:auto; }
   .empty { color:var(--dim); font-size:14px; padding:48px 20px; text-align:center; line-height:1.9; }
@@ -135,7 +138,7 @@ const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
 const KICKOFF = '請開始。依我這個「指定角色」的職責，用顧問的方式一步步帶我產出我這塊的 deliverable：先用一兩句說明你是我的什麼角色顧問、會怎麼帶我，然後直接問我第一個、最該先決定的問題。一次只問一件事。';
 const LBL = { todo:'未開始', doing:'進行中', review:'送審', done:'完成' };
 
-const T = { ip:null, isAdmin:false, view:'home', skill:null, roleId:null, run:null, busy:false, online:true, pending:[], roster:null };
+const T = { ip:null, isAdmin:false, view:'home', skill:null, roleId:null, run:null, busy:false, online:true, pending:[], pendingDocs:[], lastDocs:null, roster:null };
 
 function $(id){ return document.getElementById(id); }
 function memberId(){ const e=MXIPAuth.currentEmail(); return e?e.split('@')[0]:null; }
@@ -155,15 +158,18 @@ function extractFrames(file,n){ n=n||4; return new Promise(res=>{ const v=docume
   function seek(){ if(idx>=times.length){ try{URL.revokeObjectURL(v.src);}catch(e){} res(frames); return; } v.currentTime=times[idx]; }
   v.onseeked=()=>{ try{ const c=scaleCanvas(v.videoWidth,v.videoHeight); c.getContext('2d').drawImage(v,0,0,c.width,c.height); frames.push(c.toDataURL('image/jpeg',0.82)); }catch(e){} idx++; seek(); };
   v.onerror=()=>res(frames); }); }
+function fileToBase64(file){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>{ const s=String(r.result||''); const i=s.indexOf(','); res(i>=0?s.slice(i+1):''); }; r.onerror=()=>res(''); r.readAsDataURL(file); }); }
 async function addFiles(files){
   const list=Array.from(files||[]); if(!list.length) return;
   for(const f of list){
     try{
       if(f.type.indexOf('image/')===0){ const d=await imageToDataUrl(f); if(d) T.pending.push(d); }
       else if(f.type.indexOf('video/')===0){ const fr=await extractFrames(f,4); fr.forEach(d=>{ if(d) T.pending.push(d); }); }
+      else if(f.type==='application/pdf'){ if(f.size>30*1024*1024){ alert('PDF 太大（>30MB）：'+f.name+'，請拆小或先擷取重點頁'); continue; } const data=await fileToBase64(f); if(data) T.pendingDocs.push({name:f.name, data:data}); }
     }catch(e){}
   }
   if(T.pending.length>8) T.pending=T.pending.slice(0,8);
+  if(T.pendingDocs.length>5) T.pendingDocs=T.pendingDocs.slice(0,5);
   renderChat();
 }
 
@@ -317,7 +323,8 @@ async function callConsult(){
   const msgs=arr.map(m=>({ role:m.role, content:m.content }));
   const last=arr[arr.length-1];
   const images=(last&&last.role==='user'&&Array.isArray(last.images))?last.images.map(toPayload).filter(Boolean):[];
-  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(), body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), roster:T.roster, messages:msgs, images:images }) });
+  const docs=Array.isArray(T.lastDocs)?T.lastDocs.map(d=>({name:d.name,data:d.data})):[]; T.lastDocs=null;
+  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(), body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), roster:T.roster, messages:msgs, images:images, docs:docs }) });
   let data={}; try{ data=await r.json(); }catch(e){}
   if(!r.ok || data.error){ const d=data.error||('HTTP '+r.status); throw new Error(typeof d==='string'?d:JSON.stringify(d)); }
   return { text:(data.text||'').trim()||'（顧問沒有回覆內容，請再試一次）', coverage:(Array.isArray(data.coverage)?data.coverage:null), roster:(Array.isArray(data.roster)?data.roster:null) };
@@ -344,7 +351,8 @@ function renderGuide(){
 function bubbles(){
   return chat().filter(m=>!m.kickoff).map(m=>{
     const imgs=(m.images&&m.images.length)?'<div class="bimgs">'+m.images.map(d=>'<img src="'+d+'">').join('')+'</div>':'';
-    return '<div class="msg '+(m.role==='assistant'?'ai':'user')+'"><div class="who">'+(m.role==='assistant'?'AI 顧問':'你')+'</div>'+imgs+fmt(m.content)+'</div>';
+    const docs=(m.docNames&&m.docNames.length)?'<div class="bdocs">'+m.docNames.map(n=>'<span class="doc-chip">📄 '+esc(n)+'</span>').join('')+'</div>':'';
+    return '<div class="msg '+(m.role==='assistant'?'ai':'user')+'"><div class="who">'+(m.role==='assistant'?'AI 顧問':'你')+'</div>'+imgs+docs+fmt(m.content)+'</div>';
   }).join('');
 }
 function renderChat(){
@@ -355,8 +363,11 @@ function renderChat(){
     +'<div class="chat-role">'+(r?'<b>'+esc(r.name)+'</b>（'+esc(r.en)+'）<span class="pill">'+esc(f.label)+'</span>':'<b>'+esc(f.label)+'</b>')+'</div></div>'
     +'<div class="runner">'+renderGuide()+'<div class="chat">'
     +'<div class="msgs" id="msgs">'+bubbles()+(T.busy?'<div class="typing">顧問思考中…</div>':'')+'</div>'
-    +(T.pending.length?'<div class="attach-row">'+T.pending.map((d,i)=>'<div class="thumb"><img src="'+d+'"><button data-rm="'+i+'" title="移除">×</button></div>').join('')+'</div>':'')
-    +'<div class="composer"><label class="attach-btn" title="上傳參考圖 / 手稿 / 影片（影片會自動抽關鍵影格）">📎<input type="file" id="fileInput" accept="image/*,video/*" multiple hidden></label>'
+    +((T.pending.length||T.pendingDocs.length)?'<div class="attach-row">'
+        +T.pending.map((d,i)=>'<div class="thumb"><img src="'+d+'"><button data-rm="'+i+'" title="移除">×</button></div>').join('')
+        +T.pendingDocs.map((d,i)=>'<div class="doc-chip">📄 '+esc(d.name)+'<button data-rmd="'+i+'" title="移除">×</button></div>').join('')
+      +'</div>':'')
+    +'<div class="composer"><label class="attach-btn" title="上傳參考圖 / 手稿 / 影片 / PDF（影片自動抽影格、PDF 直接給 AI 讀）">📎<input type="file" id="fileInput" accept="image/*,video/*,application/pdf" multiple hidden></label>'
     +'<textarea id="input" placeholder="輸入你的回覆，或上傳參考圖/手稿讓 AI 看（Enter 送出）"'+(T.busy?' disabled':'')+'></textarea>'
     +'<button class="primary" id="sendBtn"'+(T.busy?' disabled':'')+'>送出</button></div>'
     +'<div class="toolbar"><button id="deliverBtn"'+(T.busy?' disabled':'')+'>🧩 請顧問彙整成 deliverable</button>'
@@ -372,6 +383,7 @@ function wire(){
   if($('backBtn')) $('backBtn').onclick=()=>{ if(!T.busy) renderHome(); };
   if($('fileInput')) $('fileInput').onchange=(e)=>{ addFiles(e.target.files); e.target.value=''; };
   document.querySelectorAll('[data-rm]').forEach(b=>{ b.onclick=()=>{ T.pending.splice(+b.dataset.rm,1); renderChat(); }; });
+  document.querySelectorAll('[data-rmd]').forEach(b=>{ b.onclick=()=>{ T.pendingDocs.splice(+b.dataset.rmd,1); renderChat(); }; });
   const input=$('input');
   if($('sendBtn')) $('sendBtn').onclick=()=>doSend();
   if(input){ input.onkeydown=(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSend(); } }; input.focus(); }
@@ -383,9 +395,10 @@ function wire(){
 async function doSend(forced){
   if(T.busy) return;
   const input=$('input'); const text=forced||(input?input.value.trim():'');
-  const imgs=T.pending.slice();
-  if(!text && !imgs.length) return;
-  chat().push({ role:'user', content:text||'（請看我上傳的參考圖）', images:imgs }); T.pending=[]; T.busy=true; renderChat(); saveRun();
+  const imgs=T.pending.slice(); const docs=T.pendingDocs.slice();
+  if(!text && !imgs.length && !docs.length) return;
+  T.lastDocs=docs;
+  chat().push({ role:'user', content:text||'（請看我上傳的附件）', images:imgs, docNames:docs.map(d=>d.name) }); T.pending=[]; T.pendingDocs=[]; T.busy=true; renderChat(); saveRun();
   try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; if(res.roster && T.skill==='brand-core') T.run.responses.__roster=res.roster; }
   catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可先重試；若持續，通知管理者。）' }); }
   T.busy=false; renderChat(); saveRun();

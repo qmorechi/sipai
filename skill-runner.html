@@ -23,43 +23,39 @@
   .field { display:flex; flex-direction:column; gap:4px; }
   .field label { font-size:11px; color:var(--dim); letter-spacing:.04em; }
   select { background:var(--panel2); color:var(--txt); border:1px solid var(--line); border-radius:8px;
-           padding:8px 11px; font:14px/1.4 inherit; outline:none; min-width:190px; }
+           padding:8px 11px; font:14px/1.4 inherit; outline:none; min-width:200px; }
   select:focus { border-color:var(--gold); }
-  .skill-summary { font-size:12px; color:var(--dim); line-height:1.6; }
+  .role-meta { font-size:12px; color:var(--dim); line-height:1.6; }
+  .role-meta b { color:var(--gold); }
   .outputs { font-size:11px; color:var(--ok); margin-top:3px; }
-  .tag { display:inline-block; font-size:10px; padding:1px 7px; border-radius:3px; font-family:monospace;
-         letter-spacing:.04em; margin-left:6px; }
-  .tag.opt { background:rgba(122,120,112,.18); color:var(--dim); }
+  .pill { display:inline-block; font-size:10px; padding:1px 7px; border-radius:3px; font-family:monospace;
+          letter-spacing:.04em; margin-left:6px; background:rgba(197,164,107,.15); color:var(--gold); }
 
-  /* 主體：左流程導覽 + 右對話 */
   .runner { display:grid; grid-template-columns:230px 1fr; gap:18px; padding:14px 28px 0; flex:1 1 auto;
             min-height:0; }
   .guide { border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:10px;
            overflow:auto; align-self:stretch; }
   .guide h3 { font-size:12px; color:var(--dim); margin:2px 6px 8px; letter-spacing:.05em; font-weight:600; }
+  .guide .focus { font-size:11px; color:var(--ok); margin:0 6px 10px; line-height:1.6; }
   .gstep { display:flex; gap:8px; align-items:flex-start; padding:7px 8px; border-radius:7px;
            font-size:12.5px; color:var(--dim); }
   .gstep .n { width:18px; height:18px; border-radius:50%; border:1px solid var(--line); flex:0 0 auto;
               display:flex; align-items:center; justify-content:center; font-size:10px; }
   .gstep .cmd { font-family:monospace; font-size:10px; opacity:.55; }
 
-  /* 對話區 */
   .chat { display:flex; flex-direction:column; min-height:0; }
   .msgs { flex:1 1 auto; overflow:auto; padding:6px 4px; display:flex; flex-direction:column; gap:12px; }
   .msg { max-width:86%; padding:11px 14px; border-radius:12px; font-size:14px; line-height:1.7;
          white-space:pre-wrap; word-break:break-word; }
-  .msg.ai   { align-self:flex-start; background:var(--panel); border:1px solid var(--line);
-              border-top-left-radius:3px; }
-  .msg.user { align-self:flex-end; background:rgba(197,164,107,.14); border:1px solid rgba(197,164,107,.35);
-              border-top-right-radius:3px; }
+  .msg.ai   { align-self:flex-start; background:var(--panel); border:1px solid var(--line); border-top-left-radius:3px; }
+  .msg.user { align-self:flex-end; background:rgba(197,164,107,.14); border:1px solid rgba(197,164,107,.35); border-top-right-radius:3px; }
   .msg .who { font-size:10px; color:var(--dim); margin-bottom:4px; letter-spacing:.04em; }
   .msg strong { color:var(--gold); }
   .typing { align-self:flex-start; color:var(--dim); font-size:13px; padding:6px 4px; }
 
   .composer { flex:0 0 auto; display:flex; gap:8px; align-items:flex-end; padding:10px 0 4px; }
   .composer textarea { flex:1; background:var(--panel2); color:var(--txt); border:1px solid var(--line);
-    border-radius:10px; padding:11px 13px; font:14px/1.5 inherit; outline:none; resize:none; min-height:48px;
-    max-height:160px; }
+    border-radius:10px; padding:11px 13px; font:14px/1.5 inherit; outline:none; resize:none; min-height:48px; max-height:160px; }
   .composer textarea:focus { border-color:var(--gold); }
   button { cursor:pointer; border:1px solid var(--line); border-radius:9px; padding:10px 16px; font:13px/1 inherit;
            background:var(--panel2); color:var(--txt); white-space:nowrap; }
@@ -70,24 +66,47 @@
   .toolbar { flex:0 0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
              border-top:1px solid var(--line); padding:10px 0; margin-bottom:6px; }
   .savestate { font-size:11px; color:var(--dim); margin-left:auto; }
-  .empty { color:var(--dim); font-size:14px; padding:48px 20px; text-align:center; line-height:1.8; }
+  .empty { color:var(--dim); font-size:14px; padding:48px 20px; text-align:center; line-height:1.9; }
+  .empty a { color:var(--gold); }
+
+  .seg { display:flex; gap:6px; }
+  .seg button { padding:8px 12px; }
+  .prog { padding:8px 28px 28px; overflow:auto; }
+  .prog h2 { font-size:16px; margin:4px 0 14px; }
+  .pbar-wrap { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:18px; max-width:720px; }
+  .pbar-top { display:flex; justify-content:space-between; font-size:13px; margin-bottom:9px; color:var(--dim); }
+  .pbar-top b { color:var(--ok); font-size:15px; }
+  .pbar { height:10px; background:#0e0e10; border-radius:6px; overflow:hidden; }
+  .pbar > i { display:block; height:100%; background:var(--ok); transition:width .3s; }
+  .ptable { width:100%; border-collapse:collapse; font-size:13px; max-width:860px; }
+  .ptable th, .ptable td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); }
+  .ptable th { color:var(--dim); font-weight:600; font-size:11px; letter-spacing:.03em; }
+  .pstat { display:inline-block; font-size:11px; padding:2px 10px; border-radius:20px; }
+  .s-todo{ background:rgba(122,120,112,.18); color:var(--dim); }
+  .s-doing{ background:rgba(141,211,255,.16); color:#8dd3ff; }
+  .s-review{ background:rgba(242,179,94,.16); color:var(--warn); }
+  .s-done{ background:rgba(113,209,194,.18); color:var(--ok); }
+  .wk { color:var(--ok); font-weight:700; }
   @media (max-width:820px){ .runner{ grid-template-columns:1fr; } .guide{ display:none; } }
 </style>
 </head>
 <body>
 <header>
   <h1>MX IP <span>STUDIO</span> · Skill Runner</h1>
-  <div class="sub">選好 IP 與角色，AI 顧問會用你角色的專業腳本一步步帶你產出 deliverable —— 不是空白表單。</div>
+  <div class="sub">選好 IP 與你的角色，AI 顧問只帶你做「你這個角色」負責的部分 —— 不是空白表單，也不用碰別人的工。</div>
 </header>
 
 <div class="banner hidden" id="banner"></div>
 
 <div class="picker">
   <div class="field"><label>IP 計畫</label><select id="ipSel"></select></div>
-  <div class="field"><label>角色 Skill</label><select id="skillSel"></select></div>
-  <div class="field" style="flex:1; min-width:220px;">
-    <div class="skill-summary" id="skillSummary"></div>
-    <div class="outputs" id="skillOutputs"></div>
+  <div class="field"><label>你的角色</label><select id="roleSel"></select></div>
+  <div class="field"><label>檢視</label>
+    <div class="seg"><button id="modeChat" class="primary">💬 對談</button><button id="modeProg">📊 進度</button></div>
+  </div>
+  <div class="field" style="flex:1; min-width:240px;">
+    <div class="role-meta" id="roleMeta"></div>
+    <div class="outputs" id="roleOutputs"></div>
   </div>
 </div>
 
@@ -100,74 +119,101 @@
 <script src="skill-flows.js"></script>
 <script>
 'use strict';
-// ── Skill Runner v2（北極星：AI 顧問對談）──
-// 受 auth gate 保護。AI 顧問後端 = Supabase Edge Function `skill-consult`（持金鑰）。
-// 對話 transcript 存 skill_runs.responses.__chat（+ localStorage fallback）。
+// ── Skill Runner v2（北極星：AI 顧問對談，角色導向）──
+// 一般成員只看自己在該 IP 選的角色；admin 看全部 22 角色 + 兩個跨角色工具。
+// AI 顧問只聚焦該成員「指定角色」的職責/交付物。對話存 skill_runs.responses.__chat。
 
-const CONSULT_SLUG = 'hyper-processor'; // 實際 slug（Supabase 自動命名；顯示名為 skill-consult，URL 用 hyper-processor）
+const CONSULT_SLUG = 'hyper-processor'; // 實際 slug（顯示名 skill-consult，URL 用 hyper-processor）
 const SB = (window.MXIPAuth && MXIPAuth.SB_URL) || '';
 const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
-const KICKOFF = '請開始。依我這個角色的腳本，用顧問的方式一步步帶我產出 deliverable：先用一兩句說明你是哪個角色顧問、會怎麼帶我，然後直接問我第一個問題。一次只問一件事。';
+const KICKOFF = '請開始。依我這個「指定角色」的職責，用顧問的方式一步步帶我產出我這塊的 deliverable：先用一兩句說明你是我的什麼角色顧問、會怎麼帶我，然後直接問我第一個、最該先決定的問題。一次只問一件事。';
+const SPECIAL_SKILLS = ['multi-party-discussion', 'ip-full-workflow']; // 非角色、admin 專屬
 
-const T = { ip:null, skill:null, run:null, busy:false, saveTimer:null, online:true };
+const T = { ip:null, skill:null, roleId:null, isAdmin:false, mode:'chat', run:null, busy:false, online:true };
 
 function $(id){ return document.getElementById(id); }
 function memberId(){ const e = MXIPAuth.currentEmail(); return e ? e.split('@')[0] : null; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmt(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); }
 function showBanner(msg){ const b=$('banner'); if(!msg){ b.classList.add('hidden'); return; } b.innerHTML=msg; b.classList.remove('hidden'); }
+function pad2(n){ return (n<10?'0':'')+n; }
+function roleById(id){ return ROLE_DATA.roles.find(r=>r.id===id); }
 
-// ── 角色 → 建議 skill ──
-async function myRoleIds(){
-  const id = memberId(); if(!id) return [];
-  try{
-    const r = await fetch(SB + '/rest/v1/role_members?member_id=eq.' + encodeURIComponent(id) + '&select=role_id',
-                          { headers: MXIPAuth.authHeaders() });
-    if(!r.ok) return [];
-    return (await r.json()).map(x=>x.role_id);
-  }catch(e){ return []; }
-}
-function recommendedSkills(roleIds){ const s=new Set(); roleIds.forEach(r=>{ const k=ROLE_SKILL[r]; if(k) s.add(k); }); return s; }
-
+// ── IP 下拉 ──
 function fillIpSelect(){
   const sel=$('ipSel');
   const ips=(typeof IPS!=='undefined'?IPS:[]).slice().sort((a,b)=>(a.order_no||99)-(b.order_no||99));
   sel.innerHTML=ips.map(ip=>'<option value="'+esc(ip.id)+'">'+esc(ip.name)+(ip.status&&ip.status!=='active'?'（'+ip.status+'）':'')+'</option>').join('');
 }
-function fillSkillSelect(recSet){
-  const sel=$('skillSel');
-  sel.innerHTML=SKILL_LIST.map(sid=>'<option value="'+esc(sid)+'">'+esc(SKILL_FLOWS[sid].label)+(recSet.has(sid)?'　★建議':'')+'</option>').join('');
-  for(const sid of SKILL_LIST){ if(recSet.has(sid)){ sel.value=sid; break; } }
+
+// ── 角色下拉：member 只列自己在該 IP 的角色；admin 列全部 + 跨角色工具 ──
+async function rolesForIp(ip){
+  const id=memberId(); if(!id) return [];
+  try{
+    const r=await fetch(SB+'/rest/v1/role_members?member_id=eq.'+encodeURIComponent(id)+'&ip_id=eq.'+encodeURIComponent(ip)+'&select=role_id',{headers:MXIPAuth.authHeaders()});
+    if(!r.ok) return []; return (await r.json()).map(x=>x.role_id);
+  }catch(e){ return []; }
 }
-function renderSkillMeta(){
-  const f=SKILL_FLOWS[T.skill];
-  $('skillSummary').textContent=f?f.summary:'';
-  $('skillOutputs').textContent=f?('交付物：'+f.outputs.join('、')):'';
+async function fillRolePicker(){
+  const sel=$('roleSel'); let html='';
+  if(T.isAdmin){
+    const bySkill={};
+    ROLE_DATA.roles.forEach(r=>{ const sk=ROLE_SKILL[r.id]; if(sk){(bySkill[sk]=bySkill[sk]||[]).push(r);} });
+    SKILL_LIST.forEach(sid=>{ const rs=bySkill[sid]; if(!rs) return;
+      html+='<optgroup label="'+esc(SKILL_FLOWS[sid].label)+'">'
+        + rs.sort((a,b)=>a.id-b.id).map(r=>'<option value="r:'+r.id+'">'+esc(pad2(r.id)+' '+r.name)+'</option>').join('')
+        + '</optgroup>'; });
+    html+='<optgroup label="跨角色 / 管理（admin）">'
+      + SPECIAL_SKILLS.map(sid=>'<option value="s:'+sid+'">'+esc(SKILL_FLOWS[sid].label)+'</option>').join('')
+      + '</optgroup>';
+    sel.innerHTML=html;
+  } else {
+    const ids=(await rolesForIp(T.ip)).sort((a,b)=>a-b);
+    if(!ids.length){ sel.innerHTML='<option value="">（尚未選角色）</option>'; return; }
+    sel.innerHTML=ids.map(id=>{ const r=roleById(id); return r?'<option value="r:'+id+'">'+esc(pad2(id)+' '+r.name)+'</option>':''; }).join('');
+  }
 }
 
-// 送給後端的角色腳本（非機密；行為規則在伺服器端）
+function renderRoleMeta(){
+  const f=SKILL_FLOWS[T.skill];
+  if(!f){ $('roleMeta').innerHTML=''; $('roleOutputs').textContent=''; return; }
+  if(T.roleId){ const r=roleById(T.roleId);
+    $('roleMeta').innerHTML='<b>你的角色：'+esc(r.name)+'</b>（'+esc(r.en)+'）<span class="pill">'+esc(f.label)+'</span><br>'+esc(r.scope);
+    $('roleOutputs').textContent='你要交付：'+(r.deliverables||[]).join('、');
+  } else {
+    $('roleMeta').innerHTML='<b>'+esc(f.label)+'</b><br>'+esc(f.summary);
+    $('roleOutputs').textContent='交付物：'+f.outputs.join('、');
+  }
+}
+
+// ── 送後端的資料 ──
 function buildBrief(){
   const f=SKILL_FLOWS[T.skill];
   return { id:T.skill, label:f.label, summary:f.summary, outputs:f.outputs,
     stages:f.stages.map(s=>({ cmd:s.cmd, title:s.title, intro:s.intro||'', optional:!!s.optional,
       repeatable:!!s.repeatable, fields:s.fields.map(fl=>fl.label+(fl.required?'*':'')) })) };
 }
+function buildRoleFocus(){
+  if(!T.roleId) return null; const r=roleById(T.roleId); if(!r) return null;
+  return { id:r.id, name:r.name, en:r.en, scope:r.scope, deliverables:r.deliverables, risk:r.risk };
+}
 
-// ── run 載入 / 儲存（transcript 存 responses.__chat）──
-function lsKey(){ return 'mxip_chat_' + memberId() + '_' + T.ip + '_' + T.skill; }
-function blankRun(){ return { member_id:memberId(), ip_id:T.ip, skill_id:T.skill, responses:{__chat:[]}, current_stage:0, status:'draft' }; }
+// ── run 載入/儲存（skill_id = skill 或 skill#roleId，每個角色獨立一份）──
+function runKey(){ return T.skill + (T.roleId ? '#'+T.roleId : ''); }
+function lsKey(){ return 'mxip_chat_'+memberId()+'_'+T.ip+'_'+runKey(); }
+function blankRun(){ return { member_id:memberId(), ip_id:T.ip, skill_id:runKey(), responses:{__chat:[]}, current_stage:0, status:'draft' }; }
 function chat(){ return (T.run && T.run.responses && T.run.responses.__chat) || []; }
 
 async function loadRun(){
   T.run=null; let loaded=false;
   try{
     const url=SB+'/rest/v1/skill_runs?member_id=eq.'+encodeURIComponent(memberId())
-      +'&ip_id=eq.'+encodeURIComponent(T.ip)+'&skill_id=eq.'+encodeURIComponent(T.skill)+'&select=*';
+      +'&ip_id=eq.'+encodeURIComponent(T.ip)+'&skill_id=eq.'+encodeURIComponent(runKey())+'&select=*';
     const r=await fetch(url,{ headers:MXIPAuth.authHeaders() });
     if(r.ok){ T.online=true; showBanner(''); const rows=await r.json(); if(rows.length){ T.run=rows[0]; loaded=true; } }
     else T.online=false;
   }catch(e){ T.online=false; }
-  if(!T.online) showBanner('⚠️ 連不到雲端儲存（skill_runs）。對話暫時只存這台瀏覽器，部署/恢復後會改存雲端。');
+  if(!T.online) showBanner('⚠️ 連不到雲端儲存（skill_runs）。對話暫時只存這台瀏覽器，恢復後會改存雲端。');
   if(!loaded){ try{ const raw=localStorage.getItem(lsKey()); if(raw){ T.run=JSON.parse(raw); loaded=true; } }catch(e){} }
   if(!T.run) T.run=blankRun();
   if(!T.run.responses) T.run.responses={};
@@ -175,7 +221,7 @@ async function loadRun(){
 }
 function persistLocal(){ try{ localStorage.setItem(lsKey(), JSON.stringify(T.run)); }catch(e){} }
 async function saveRun(){
-  T.run.member_id=memberId(); T.run.ip_id=T.ip; T.run.skill_id=T.skill;
+  T.run.member_id=memberId(); T.run.ip_id=T.ip; T.run.skill_id=runKey();
   persistLocal();
   if(!T.online){ markSaved('已存本機'); return; }
   try{
@@ -190,43 +236,44 @@ async function saveRun(){
 }
 function markSaved(t){ const el=$('saveState'); if(el) el.textContent=t+'　'+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}); }
 
-// ── 呼叫 AI 顧問後端 ──
+// ── 呼叫 AI 顧問 ──
 async function callConsult(){
-  const msgs=chat().map(m=>({ role:m.role, content:m.content })); // 含 kickoff
+  const msgs=chat().map(m=>({ role:m.role, content:m.content }));
   const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(),
-    body:JSON.stringify({ skillBrief:buildBrief(), messages:msgs }) });
+    body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), messages:msgs }) });
   let data={}; try{ data=await r.json(); }catch(e){}
-  if(!r.ok || data.error){
-    const detail = data.error || ('HTTP '+r.status);
-    throw new Error(typeof detail==='string'?detail:JSON.stringify(detail));
-  }
+  if(!r.ok || data.error){ const d=data.error||('HTTP '+r.status); throw new Error(typeof d==='string'?d:JSON.stringify(d)); }
   return (data.text||'').trim() || '（顧問沒有回覆內容，請再試一次）';
 }
 
 // ── 渲染 ──
 function renderGuide(){
   const f=SKILL_FLOWS[T.skill];
-  return '<div class="guide"><h3>流程導覽（'+f.stages.length+' 階段）</h3>'
+  const focus = T.roleId ? ('★ 你的角色：'+esc(roleById(T.roleId).name)+'　顧問只帶你做這塊，其餘階段是上下游脈絡') : '';
+  return '<div class="guide"><h3>流程全貌（'+f.stages.length+' 階段）</h3>'
+    + (focus?'<div class="focus">'+focus+'</div>':'')
     + f.stages.map((s,i)=>'<div class="gstep"><span class="n">'+(i+1)+'</span>'
-        +'<span><div>'+esc(s.title)+(s.optional?'<span class="tag opt">選用</span>':'')+'</div>'
-        +'<div class="cmd">'+esc(s.cmd)+'</div></span></div>').join('')
+        +'<span><div>'+esc(s.title)+'</div><div class="cmd">'+esc(s.cmd)+'</div></span></div>').join('')
     + '</div>';
 }
 function bubbles(){
   return chat().filter(m=>!m.kickoff).map(m=>
-    '<div class="msg '+(m.role==='assistant'?'ai':'user')+'">'
-    +'<div class="who">'+(m.role==='assistant'?'AI 顧問':'你')+'</div>'+fmt(m.content)+'</div>').join('');
+    '<div class="msg '+(m.role==='assistant'?'ai':'user')+'"><div class="who">'
+    +(m.role==='assistant'?'AI 顧問':'你')+'</div>'+fmt(m.content)+'</div>').join('');
 }
 function renderRunner(){
   const area=$('runnerArea');
-  if(!T.skill||!T.ip){ area.innerHTML='<div class="empty">請先選擇 IP 與角色 Skill。</div>'; return; }
+  if(!T.ip){ area.innerHTML='<div class="empty">請先選擇 IP。</div>'; return; }
+  if(!T.skill){
+    area.innerHTML='<div class="empty">你在這個 IP 還沒有指定角色。<br>請先到 <a href="roles.html?u='+esc(memberId())+'&ip='+esc(T.ip)+'">角色選擇頁</a> 選好你的角色，再回來。</div>';
+    return;
+  }
   area.innerHTML='<div class="runner">'+renderGuide()
     +'<div class="chat">'
-    +'<div class="msgs" id="msgs">'+bubbles()+(T.busy?'<div class="typing" id="typing">顧問思考中…</div>':'')+'</div>'
+    +'<div class="msgs" id="msgs">'+bubbles()+(T.busy?'<div class="typing">顧問思考中…</div>':'')+'</div>'
     +'<div class="composer">'
     +'<textarea id="input" placeholder="輸入你的回覆，Enter 送出（Shift+Enter 換行）"'+(T.busy?' disabled':'')+'></textarea>'
-    +'<button class="primary" id="sendBtn"'+(T.busy?' disabled':'')+'>送出</button>'
-    +'</div>'
+    +'<button class="primary" id="sendBtn"'+(T.busy?' disabled':'')+'>送出</button></div>'
     +'<div class="toolbar">'
     +'<button id="deliverBtn"'+(T.busy?' disabled':'')+'>🧩 請顧問彙整成 deliverable</button>'
     +'<button id="exportMd">⬇ 匯出對話 (Markdown)</button>'
@@ -234,54 +281,41 @@ function renderRunner(){
     +'<select id="statusSel" style="min-width:auto">'
       +'<option value="draft"'+(T.run.status==='draft'?' selected':'')+'>草稿</option>'
       +'<option value="in_review"'+(T.run.status==='in_review'?' selected':'')+'>送審</option>'
-      +'<option value="done"'+(T.run.status==='done'?' selected':'')+'>完成</option>'
-    +'</select>'
+      +'<option value="done"'+(T.run.status==='done'?' selected':'')+'>完成</option></select>'
     +'<span class="savestate" id="saveState">—</span>'
     +'</div></div></div>';
-  wire();
-  scrollMsgs();
+  wire(); scrollMsgs();
 }
 function scrollMsgs(){ const m=$('msgs'); if(m) m.scrollTop=m.scrollHeight; }
-
 function wire(){
-  const input=$('input'), send=$('sendBtn');
-  if(send) send.onclick=()=>doSend();
-  if(input){
-    input.onkeydown=(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); doSend(); } };
-    input.focus();
-  }
-  if($('deliverBtn')) $('deliverBtn').onclick=()=>doSend('請把目前累積的成果，彙整成一份乾淨、可直接交付的 Markdown deliverable。');
+  const input=$('input');
+  if($('sendBtn')) $('sendBtn').onclick=()=>doSend();
+  if(input){ input.onkeydown=(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSend(); } }; input.focus(); }
+  if($('deliverBtn')) $('deliverBtn').onclick=()=>doSend('請把我這個角色目前累積的成果，彙整成一份乾淨、可直接交付的 Markdown deliverable。');
   if($('exportMd')) $('exportMd').onclick=exportMarkdown;
   if($('restartBtn')) $('restartBtn').onclick=restart;
   if($('statusSel')) $('statusSel').onchange=(e)=>{ T.run.status=e.target.value; saveRun(); };
 }
-
 async function doSend(forced){
   if(T.busy) return;
-  const input=$('input');
-  const text = forced || (input ? input.value.trim() : '');
+  const input=$('input'); const text=forced||(input?input.value.trim():'');
   if(!text) return;
   chat().push({ role:'user', content:text });
   T.busy=true; renderRunner(); saveRun();
-  try{
-    const reply=await callConsult();
-    chat().push({ role:'assistant', content:reply });
-  }catch(e){
-    chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可能是 AI 後端尚未部署，或金鑰未設定。可先重試；若持續，通知管理者。）' });
-  }
+  try{ chat().push({ role:'assistant', content:await callConsult() }); }
+  catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可先重試；若持續，通知管理者。）' }); }
   T.busy=false; renderRunner(); saveRun();
 }
-
 async function startIfEmpty(){
   if(chat().length>0){ renderRunner(); return; }
   chat().push({ role:'user', content:KICKOFF, kickoff:true });
   T.busy=true; renderRunner(); saveRun();
-  try{ const reply=await callConsult(); chat().push({ role:'assistant', content:reply }); }
-  catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（AI 後端可能尚未部署。部署完成後，按「↻ 重新開始」即可。）' }); }
+  try{ chat().push({ role:'assistant', content:await callConsult() }); }
+  catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（後端可能尚未部署完成，稍後按「↻ 重新開始」再試。）' }); }
   T.busy=false; renderRunner(); saveRun();
 }
 function restart(){
-  if(!confirm('重新開始會清空這個 IP×角色 的對話，確定？')) return;
+  if(!confirm('重新開始會清空這個角色的對話，確定？')) return;
   T.run.responses.__chat=[]; saveRun(); startIfEmpty();
 }
 
@@ -289,27 +323,90 @@ function restart(){
 function ipName(id){ const m=(typeof IPS!=='undefined'?IPS:[]).find(x=>x.id===id); return m?m.name:id; }
 function buildMarkdown(){
   const f=SKILL_FLOWS[T.skill];
-  let md='# '+f.label+' — '+ipName(T.ip)+'\n\n> 成員：'+memberId()+'　·　'+new Date().toLocaleString('zh-TW')+'\n\n';
+  const who = T.roleId ? roleById(T.roleId).name : f.label;
+  let md='# '+who+' — '+ipName(T.ip)+'\n\n> 成員：'+memberId()+'　·　流程：'+f.label+'　·　'+new Date().toLocaleString('zh-TW')+'\n\n';
   chat().filter(m=>!m.kickoff).forEach(m=>{ md+=(m.role==='assistant'?'**AI 顧問**：\n':'**你**：\n')+m.content+'\n\n---\n\n'; });
   return md;
 }
 function download(name,text,mime){ const b=new Blob([text],{type:mime||'text/plain;charset=utf-8'}); const u=URL.createObjectURL(b);
   const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1500); }
-function exportMarkdown(){ download((T.skill+'_'+T.ip+'_'+memberId()).replace(/[^\w\-]/g,'-')+'.md', buildMarkdown(),'text/markdown;charset=utf-8'); }
+function exportMarkdown(){ download((runKey()+'_'+T.ip+'_'+memberId()).replace(/[^\w\-]/g,'-')+'.md', buildMarkdown(),'text/markdown;charset=utf-8'); }
+
+// ── 進度視圖（累積式：狀態 = 未開始/進行中/送審/完成；本週 = updated_at 近 7 天）──
+async function renderProgress(){
+  const area=$('runnerArea');
+  area.innerHTML='<div class="empty">載入進度中…</div>';
+  if(!T.ip){ area.innerHTML='<div class="empty">請先選 IP。</div>'; return; }
+  let assigns=[], runs=[];
+  try{
+    const q=T.isAdmin?'':'&member_id=eq.'+encodeURIComponent(memberId());
+    const r=await fetch(SB+'/rest/v1/role_members?ip_id=eq.'+encodeURIComponent(T.ip)+q+'&select=role_id,member_id',{headers:MXIPAuth.authHeaders()});
+    if(r.ok) assigns=await r.json();
+    const r2=await fetch(SB+'/rest/v1/skill_runs?ip_id=eq.'+encodeURIComponent(T.ip)+'&select=member_id,skill_id,status,updated_at',{headers:MXIPAuth.authHeaders()});
+    if(r2.ok) runs=await r2.json();
+  }catch(e){}
+  const rmap={}; runs.forEach(x=>{ rmap[x.member_id+'|'+x.skill_id]=x; });
+  const wk=Date.now()-7*864e5;
+  const LBL={todo:'未開始',doing:'進行中',review:'送審',done:'完成'};
+  let done=0;
+  const rows=assigns.map(a=>{
+    const sk=ROLE_SKILL[a.role_id];
+    const run=sk?rmap[a.member_id+'|'+(sk+'#'+a.role_id)]:null;
+    let s='todo'; if(run){ s=run.status==='done'?'done':(run.status==='in_review'?'review':'doing'); }
+    if(s==='done') done++;
+    const up=run&&run.updated_at?new Date(run.updated_at):null;
+    return { rid:a.role_id, role:roleById(a.role_id), member:a.member_id, s:s, wk:!!(up&&up.getTime()>=wk), up:up };
+  }).sort((x,y)=>x.rid-y.rid);
+  const total=assigns.length, pct=total?Math.round(done/total*100):0;
+  const title=T.isAdmin?'全 IP 協作進度':'我的協作進度';
+  let html='<div class="prog"><h2>'+esc(title)+'　·　'+esc(ipName(T.ip))+'</h2>';
+  html+='<div class="pbar-wrap"><div class="pbar-top"><span>總完成度（已完成角色 ÷ 已指派角色）</span><span><b>'+pct+'%</b>　'+done+' / '+total+'</span></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>';
+  if(!total){ html+='<div class="empty">這個 IP '+(T.isAdmin?'還沒有人被指派角色。':'你還沒有指派角色。')+'</div></div>'; area.innerHTML=html; return; }
+  html+='<table class="ptable"><thead><tr><th>角色</th><th>負責成員</th><th>狀態</th><th>本週</th><th>最後更新</th></tr></thead><tbody>';
+  rows.forEach(r=>{ html+='<tr><td>'+(r.role?esc(pad2(r.rid)+' '+r.role.name):r.rid)+'</td><td>'+esc(r.member)+'</td>'
+    +'<td><span class="pstat s-'+r.s+'">'+LBL[r.s]+'</span></td>'
+    +'<td>'+(r.wk?'<span class="wk">●</span>':'')+'</td>'
+    +'<td style="color:var(--dim)">'+(r.up?r.up.toLocaleDateString('zh-TW'):'—')+'</td></tr>'; });
+  html+='</tbody></table></div>';
+  area.innerHTML=html;
+}
+function setMode(m){
+  if(T.busy) return;
+  T.mode=m;
+  if($('modeChat')) $('modeChat').classList.toggle('primary', m==='chat');
+  if($('modeProg')) $('modeProg').classList.toggle('primary', m==='progress');
+  if(m==='progress') renderProgress(); else onPick();
+}
 
 // ── 切換 / 啟動 ──
 async function onPick(){
   if(T.busy) return;
-  T.ip=$('ipSel').value; T.skill=$('skillSel').value;
-  renderSkillMeta(); await loadRun(); await startIfEmpty();
+  T.ip=$('ipSel').value;
+  const val=$('roleSel').value;
+  if(!val){ T.skill=null; T.roleId=null; }
+  else if(val.charAt(0)==='r'){ T.roleId=+val.slice(2); T.skill=ROLE_SKILL[T.roleId]; }
+  else { T.skill=val.slice(2); T.roleId=null; }
+  renderRoleMeta();
+  if(T.mode==='progress') return;       // 進度模式不受角色切換影響
+  if(!T.skill){ renderRunner(); return; }
+  await loadRun(); await startIfEmpty();
+}
+async function onIpChange(){
+  T.ip=$('ipSel').value;
+  await fillRolePicker();
+  if(T.mode==='progress'){ await renderProgress(); return; }
+  await onPick();
 }
 async function boot(){
   await MXIPAuth.init({ gate:true });
   if(!(MXIPAuth.currentUser() && MXIPAuth.isAllowed())) return;
+  try{ T.isAdmin = await MXIPAuth.hasAnyRole(['admin']); }catch(e){ T.isAdmin=false; }
   fillIpSelect();
-  const recSet=recommendedSkills(await myRoleIds());
-  fillSkillSelect(recSet);
-  $('ipSel').onchange=onPick; $('skillSel').onchange=onPick;
+  T.ip=$('ipSel').value;
+  await fillRolePicker();
+  $('ipSel').onchange=onIpChange; $('roleSel').onchange=onPick;
+  if($('modeChat')) $('modeChat').onclick=()=>setMode('chat');
+  if($('modeProg')) $('modeProg').onclick=()=>setMode('progress');
   await onPick();
   MXIPAuth.onChange(s=>{ if(!(s&&s.user)) $('runnerArea').innerHTML='<div class="empty">已登出。</div>'; });
 }

@@ -29,11 +29,11 @@
   // @minimax.com.tw（不是別名 @mx.design）。故允許網域 = minimax.com.tw。
   const ALLOWED_DOMAIN = 'minimax.com.tw';
   const HOME_URL = 'index.html';   // 單一入口/登出歸位點
-  const NEXT_KEY = 'mxip_next';    // 登入後要返回的頁，存 sessionStorage（跨 OAuth 跳轉留得住）
-
-  // 記住登入後要返回的頁。用 sessionStorage 不用網址 query——因為 Supabase OAuth
-  // 跳轉時帶 query 的 redirectTo 可能不符 redirect 白名單而被丟回乾淨 Site URL，next 會掉。
-  function rememberNext(path) { try { sessionStorage.setItem(NEXT_KEY, path); } catch (e) { /* noop */ } }
+  const NEXT_KEY = 'mxip_next';    // 登入後要返回的頁。
+  // 用 localStorage：① 不靠網址 query（Supabase OAuth 帶 query 的 redirect 可能被丟回乾淨
+  // Site URL 而掉參數）② localStorage 才撐得過 Google OAuth 跨站跳轉（Supabase session 本身
+  // 也存這裡才登得進來）；sessionStorage 在這趟跳轉會掉。用完即刪。
+  function rememberNext(path) { try { localStorage.setItem(NEXT_KEY, path); } catch (e) { /* noop */ } }
   const WRITE_VERBS = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
   if (!global.supabase || !global.supabase.createClient) {
@@ -101,7 +101,7 @@
     await sb.auth.signOut();
     _session = null;
     if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
-    // 單一入口：登出回首頁門面（除非已在首頁），並記住當前頁（sessionStorage），
+    // 單一入口：登出回首頁門面（除非已在首頁），並記住當前頁（localStorage），
     // 重新登入後由 index 自動送回。
     if (!/(^|\/)index\.html?($|\?|#)/.test(location.pathname) && location.pathname !== '/') {
       rememberNext(location.pathname + location.search + location.hash);
@@ -188,19 +188,19 @@
     _changeListeners.forEach(function (cb) { try { cb(_session); } catch (e) { console.error('[auth] onChange listener error', e); } });
   }
 
-  // 給 index 門面用：已登入且 sessionStorage 有記住的頁就送回去。回傳是否已跳轉。
+  // 給 index 門面用：已登入且 localStorage 有記住的頁就送回去。回傳是否已跳轉。
   function consumeNext() {
     if (!(currentUser() && isAllowed())) return false;
     try {
-      const next = sessionStorage.getItem(NEXT_KEY);
-      if (next) { sessionStorage.removeItem(NEXT_KEY); location.replace(next); return true; }
+      const next = localStorage.getItem(NEXT_KEY);
+      if (next) { localStorage.removeItem(NEXT_KEY); location.replace(next); return true; }
     } catch (e) { /* noop */ }
     return false;
   }
 
   // 頁面載入呼叫一次。回傳 session（可能為 null）。
   // opts.gate=true：受保護頁，未登入（或非公司帳號）一律導回 index.html 登入，
-  // 並把原本要去的網址記住（sessionStorage），登入後由 index 送回。
+  // 並把原本要去的網址記住（localStorage），登入後由 index 送回。
   async function init(opts) {
     opts = opts || {};
     await refreshSession();

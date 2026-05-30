@@ -72,11 +72,20 @@
     return WRITE_VERBS.indexOf(m) !== -1;
   }
 
+  // 把前次失敗殘留的 OAuth error 參數與 hash 從 URL 清掉，回傳乾淨的網址字串。
+  // 否則帶 error= 的網址當 redirectTo，會讓 Supabase 把成功回呼也誤判為失敗、拒收 token。
+  function cleanUrl(href) {
+    const u = new URL(href);
+    ['error', 'error_description', 'error_code'].forEach(function (k) { u.searchParams.delete(k); });
+    u.hash = '';
+    return u.toString();
+  }
+
   async function signIn() {
     await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: location.href.split('#')[0],
+        redirectTo: cleanUrl(location.href),
         queryParams: { hd: ALLOWED_DOMAIN, prompt: 'select_account' },
       },
     });
@@ -160,6 +169,15 @@
   // 頁面載入呼叫一次。回傳 session（可能為 null）。
   async function init() {
     await refreshSession();
+    // 清掉網址列殘留的 OAuth error 參數（前次失敗留下的，會擋住下次登入）。
+    // 在 refreshSession 之後做，確保 detectSessionInUrl 已先處理過 hash token。
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.has('error')) {
+        ['error', 'error_description', 'error_code'].forEach(function (k) { u.searchParams.delete(k); });
+        history.replaceState(null, '', u.pathname + u.search + u.hash);
+      }
+    } catch (e) { /* noop */ }
     sb.auth.onAuthStateChange(function (_evt, session) {
       _session = session || null;
       renderBar();

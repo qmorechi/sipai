@@ -85,7 +85,28 @@
   async function signOut() {
     await sb.auth.signOut();
     _session = null;
+    if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
     renderBar();
+  }
+
+  // ── 閒置自動登出（座位/共用裝置防護）──
+  // 成員在公司外用個人/共用裝置登入後若離開，閒置超過 IDLE_MS 自動 signOut，
+  // 避免登入態被留著讓非相關的人接手寫入。核心安全仍是 RLS，此為額外一層。
+  const IDLE_MS = 30 * 60 * 1000; // 30 分鐘
+  let _idleTimer = null;
+  function resetIdle() {
+    if (_idleTimer) clearTimeout(_idleTimer);
+    if (!currentUser()) return;          // 沒登入不用計時
+    _idleTimer = setTimeout(async function () {
+      if (!currentUser()) return;
+      await signOut();
+      alert('因閒置過久已自動登出，請重新登入');
+    }, IDLE_MS);
+  }
+  function startIdleWatch() {
+    ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
+      window.addEventListener(ev, resetIdle, { passive: true });
+    });
   }
 
   // 寫入前呼叫：未登入 → 觸發登入並回 false（呼叫端應中止本次寫入）。
@@ -142,7 +163,10 @@
     sb.auth.onAuthStateChange(function (_evt, session) {
       _session = session || null;
       renderBar();
+      resetIdle();              // 登入後開始計時、登出後清掉
     });
+    startIdleWatch();
+    resetIdle();                // 若一進來就是登入態，立即起算
     if (document.body) renderBar();
     else document.addEventListener('DOMContentLoaded', renderBar);
     return _session;

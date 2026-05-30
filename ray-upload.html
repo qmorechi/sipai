@@ -297,6 +297,10 @@ function reqHeaders() {
 }
 
 const WEBHOOK_KEY = 'mxip_ray_webhook_url';
+// 預設後端 webhook = Supabase Edge Function（非機密；真正的 Slack 金鑰在函式的 SLACK_WEBHOOK_URL 密鑰）。
+// 寫死成預設值，任何人開 ray-upload 都自動指到它，不必各自在瀏覽器設定。
+const DEFAULT_WEBHOOK = 'https://cpzbwxgokmvayhzrvkqm.supabase.co/functions/v1/swift-worker';
+const webhookUrl = () => (localStorage.getItem(WEBHOOK_KEY) || DEFAULT_WEBHOOK);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function setSyncState(state){
@@ -549,7 +553,7 @@ async function publish(){
 }
 
 async function fireWebhook(ver, today){
-  const url = localStorage.getItem(WEBHOOK_KEY);
+  const url = webhookUrl();
   if(!url) return false;
   const fd = new FormData();
   fd.append('payload', JSON.stringify({
@@ -599,12 +603,13 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.getEleme
 
 // ── webhook 設定 ──
 function renderWebhookCfg(){
-  const url = localStorage.getItem(WEBHOOK_KEY);
-  document.getElementById('webhookCfg').textContent = url ? '✏️ 已設定，點此修改' : '⚙️ 設定 webhook';
+  const custom = localStorage.getItem(WEBHOOK_KEY);
+  document.getElementById('webhookCfg').textContent =
+    custom ? '✏️ 自訂 webhook，點此修改' : '✓ 已連後端通知（預設）· 點此改';
 }
 document.getElementById('webhookCfg').addEventListener('click', ()=>{
-  const cur = localStorage.getItem(WEBHOOK_KEY) || '';
-  const next = prompt('後端 webhook URL（n8n / Edge Function，留空＝清除）：', cur);
+  const cur = localStorage.getItem(WEBHOOK_KEY) || DEFAULT_WEBHOOK;
+  const next = prompt('後端 webhook URL（留空＝用預設 Edge Function）：', cur);
   if(next === null) return;
   if(next.trim()) localStorage.setItem(WEBHOOK_KEY, next.trim());
   else localStorage.removeItem(WEBHOOK_KEY);

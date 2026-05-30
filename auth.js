@@ -3,7 +3,8 @@
 // ╚══════════════════════════════════════════════════════════════╝
 //
 // 對應 docs/HANDOFF.md「方案 C」P1。roles.html / console.html / ray-upload.html
-// 三頁共用：Google 登入（限 @mx.design）、session 管理、把寫入請求帶上使用者 JWT。
+// 三頁共用：Google 登入（限 MX 公司 Workspace，比對主要網域 @minimax.com.tw）、
+// session 管理、把寫入請求帶上使用者 JWT。
 //
 // 載入順序（頁面 <head> 或 inline script 之前）：
 //   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,7 +25,9 @@
   const SB_URL = 'https://cpzbwxgokmvayhzrvkqm.supabase.co';
   // anon key 與三頁相同（公開可見、設計上即如此；真正防護靠 RLS）
   const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemJ3eGdva212YXloenJ2a3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTY1NTYsImV4cCI6MjA5NDkzMjU1Nn0.7d_pasAywneqOxOHFGlc1dpMJcUv1BDCvhV2jYLaAGE';
-  const ALLOWED_DOMAIN = 'mx.design';
+  // mx.design 是 minimax.com.tw 的網域別名 → Google OIDC 回傳的 email 一律是主要地址
+  // @minimax.com.tw（不是別名 @mx.design）。故允許網域 = minimax.com.tw。
+  const ALLOWED_DOMAIN = 'minimax.com.tw';
   const WRITE_VERBS = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
   if (!global.supabase || !global.supabase.createClient) {
@@ -91,7 +94,7 @@
     if (!_session) await refreshSession();
     if (currentUser() && isAllowed()) return true;
     if (currentUser() && !isAllowed()) {
-      alert('請改用 @' + ALLOWED_DOMAIN + ' 的 Google 帳號登入');
+      alert('請改用 MX 公司的 Google 帳號登入');
       await signOut();
       return false;
     }
@@ -120,13 +123,15 @@
     }
     const u = currentUser();
     if (u && isAllowed()) {
-      bar.innerHTML = '<span>✅ ' + u.email + '</span><button id="mxip-signout" style="cursor:pointer;border:0;border-radius:6px;padding:3px 8px;background:#33405a;color:#cfe">登出</button>';
+      const md = u.user_metadata || {};
+      const nm = md.full_name || md.name || (u.email ? u.email.split('@')[0] : '已登入');
+      bar.innerHTML = '<span>✅ ' + nm + '</span><button id="mxip-signout" style="cursor:pointer;border:0;border-radius:6px;padding:3px 8px;background:#33405a;color:#cfe">登出</button>';
       bar.querySelector('#mxip-signout').onclick = signOut;
     } else if (u && !isAllowed()) {
-      bar.innerHTML = '<span>⚠️ 非 @' + ALLOWED_DOMAIN + ' 帳號</span><button id="mxip-signout" style="cursor:pointer;border:0;border-radius:6px;padding:3px 8px;background:#5a3340;color:#fcc">換帳號</button>';
+      bar.innerHTML = '<span>⚠️ 非公司帳號</span><button id="mxip-signout" style="cursor:pointer;border:0;border-radius:6px;padding:3px 8px;background:#5a3340;color:#fcc">換帳號</button>';
       bar.querySelector('#mxip-signout').onclick = signOut;
     } else {
-      bar.innerHTML = '<button id="mxip-signin" style="cursor:pointer;border:0;border-radius:6px;padding:4px 10px;background:#2d6cdf;color:#fff">用 @' + ALLOWED_DOMAIN + ' 登入</button>';
+      bar.innerHTML = '<button id="mxip-signin" style="cursor:pointer;border:0;border-radius:6px;padding:4px 10px;background:#2d6cdf;color:#fff">用 MX 公司帳號登入</button>';
       bar.querySelector('#mxip-signin').onclick = signIn;
     }
   }

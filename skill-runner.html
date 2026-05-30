@@ -8,110 +8,90 @@
   :root { --bg:#0d0d0f; --panel:#161618; --panel2:#1c1c20; --line:#2a2a30;
           --gold:#c5a46b; --txt:#e8e6e0; --dim:#7a7870; --ok:#71d1c2; --warn:#f2b35e; }
   * { box-sizing: border-box; }
+  html, body { height:100%; }
   body { font-family:'Noto Sans TC',system-ui,sans-serif; background:var(--bg); color:var(--txt);
-         margin:0; padding:0 0 64px; }
-  header { padding:20px 28px 14px; border-bottom:1px solid var(--line); position:sticky; top:0;
-           background:rgba(13,13,15,.94); backdrop-filter:blur(6px); z-index:50; }
-  h1 { font-size:20px; letter-spacing:.06em; margin:0 0 2px; }
+         margin:0; display:flex; flex-direction:column; }
+  header { padding:16px 28px 12px; border-bottom:1px solid var(--line); flex:0 0 auto; }
+  h1 { font-size:19px; letter-spacing:.06em; margin:0 0 2px; }
   h1 span { color:var(--gold); }
   .sub { color:var(--dim); font-size:12px; }
-  .wrap { max-width:1080px; margin:0 auto; padding:0 20px; }
   .banner { background:rgba(242,179,94,.12); border:1px solid rgba(242,179,94,.4); color:var(--warn);
-            font-size:12px; padding:8px 12px; border-radius:8px; margin:14px auto 0; max-width:1040px; }
+            font-size:12px; padding:8px 12px; border-radius:8px; margin:10px 28px 0; }
   .banner.hidden { display:none; }
 
-  /* 選擇列 */
-  .picker { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin:18px 0 8px; }
+  .picker { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; padding:12px 28px 0; flex:0 0 auto; }
   .field { display:flex; flex-direction:column; gap:4px; }
   .field label { font-size:11px; color:var(--dim); letter-spacing:.04em; }
-  select, input[type=text], textarea {
-    background:var(--panel2); color:var(--txt); border:1px solid var(--line); border-radius:8px;
-    padding:9px 11px; font:14px/1.5 inherit; outline:none; }
-  select:focus, input:focus, textarea:focus { border-color:var(--gold); }
-  select { min-width:200px; }
-  .skill-summary { font-size:12px; color:var(--dim); margin:6px 0 0; line-height:1.6; }
-  .outputs { font-size:11px; color:var(--ok); margin-top:4px; }
+  select { background:var(--panel2); color:var(--txt); border:1px solid var(--line); border-radius:8px;
+           padding:8px 11px; font:14px/1.4 inherit; outline:none; min-width:190px; }
+  select:focus { border-color:var(--gold); }
+  .skill-summary { font-size:12px; color:var(--dim); line-height:1.6; }
+  .outputs { font-size:11px; color:var(--ok); margin-top:3px; }
   .tag { display:inline-block; font-size:10px; padding:1px 7px; border-radius:3px; font-family:monospace;
          letter-spacing:.04em; margin-left:6px; }
-  .tag.rec { background:rgba(113,209,194,.16); color:var(--ok); }
   .tag.opt { background:rgba(122,120,112,.18); color:var(--dim); }
 
-  /* 主體：左進度 + 右表單 */
-  .runner { display:grid; grid-template-columns:230px 1fr; gap:22px; margin-top:18px; }
-  .progress { border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:8px;
-              align-self:start; position:sticky; top:96px; max-height:calc(100vh - 120px); overflow:auto; }
-  .pstep { display:flex; gap:8px; align-items:center; padding:8px 9px; border-radius:7px; cursor:pointer;
+  /* 主體：左流程導覽 + 右對話 */
+  .runner { display:grid; grid-template-columns:230px 1fr; gap:18px; padding:14px 28px 0; flex:1 1 auto;
+            min-height:0; }
+  .guide { border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:10px;
+           overflow:auto; align-self:stretch; }
+  .guide h3 { font-size:12px; color:var(--dim); margin:2px 6px 8px; letter-spacing:.05em; font-weight:600; }
+  .gstep { display:flex; gap:8px; align-items:flex-start; padding:7px 8px; border-radius:7px;
            font-size:12.5px; color:var(--dim); }
-  .pstep:hover { background:var(--panel2); }
-  .pstep.active { background:rgba(197,164,107,.13); color:var(--txt); }
-  .pstep .dot { width:18px; height:18px; border-radius:50%; border:1px solid var(--line); flex:0 0 auto;
-                display:flex; align-items:center; justify-content:center; font-size:10px; }
-  .pstep.filled .dot { background:var(--ok); color:#06302a; border-color:var(--ok); }
-  .pstep .cmd { font-family:monospace; font-size:10px; opacity:.6; }
+  .gstep .n { width:18px; height:18px; border-radius:50%; border:1px solid var(--line); flex:0 0 auto;
+              display:flex; align-items:center; justify-content:center; font-size:10px; }
+  .gstep .cmd { font-family:monospace; font-size:10px; opacity:.55; }
 
-  .stage { border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:20px 22px; }
-  .stage h2 { font-size:17px; margin:0 0 2px; }
-  .stage .cmd { font-family:monospace; font-size:12px; color:var(--gold); }
-  .stage .intro { font-size:13px; color:var(--dim); line-height:1.7; margin:8px 0 16px; }
-  .stage .note { font-size:12px; color:var(--warn); background:rgba(242,179,94,.08);
-                 border-left:3px solid var(--warn); padding:7px 10px; border-radius:4px; margin:0 0 16px; }
-  .frow { margin-bottom:16px; }
-  .frow > label { display:block; font-size:13px; margin-bottom:5px; }
-  .frow .req { color:var(--gold); }
-  .frow .hint { font-size:11px; color:var(--dim); margin-top:4px; line-height:1.6; }
-  .frow input[type=text], .frow textarea, .frow select { width:100%; }
-  .frow textarea { min-height:92px; resize:vertical; }
+  /* 對話區 */
+  .chat { display:flex; flex-direction:column; min-height:0; }
+  .msgs { flex:1 1 auto; overflow:auto; padding:6px 4px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:86%; padding:11px 14px; border-radius:12px; font-size:14px; line-height:1.7;
+         white-space:pre-wrap; word-break:break-word; }
+  .msg.ai   { align-self:flex-start; background:var(--panel); border:1px solid var(--line);
+              border-top-left-radius:3px; }
+  .msg.user { align-self:flex-end; background:rgba(197,164,107,.14); border:1px solid rgba(197,164,107,.35);
+              border-top-right-radius:3px; }
+  .msg .who { font-size:10px; color:var(--dim); margin-bottom:4px; letter-spacing:.04em; }
+  .msg strong { color:var(--gold); }
+  .typing { align-self:flex-start; color:var(--dim); font-size:13px; padding:6px 4px; }
 
-  .navrow { display:flex; justify-content:space-between; align-items:center; margin-top:20px;
-            border-top:1px solid var(--line); padding-top:16px; gap:10px; flex-wrap:wrap; }
-  .navrow .right { display:flex; gap:8px; }
-  button { cursor:pointer; border:0; border-radius:8px; padding:9px 16px; font:13px/1 inherit;
-           background:var(--panel2); color:var(--txt); border:1px solid var(--line); }
+  .composer { flex:0 0 auto; display:flex; gap:8px; align-items:flex-end; padding:10px 0 4px; }
+  .composer textarea { flex:1; background:var(--panel2); color:var(--txt); border:1px solid var(--line);
+    border-radius:10px; padding:11px 13px; font:14px/1.5 inherit; outline:none; resize:none; min-height:48px;
+    max-height:160px; }
+  .composer textarea:focus { border-color:var(--gold); }
+  button { cursor:pointer; border:1px solid var(--line); border-radius:9px; padding:10px 16px; font:13px/1 inherit;
+           background:var(--panel2); color:var(--txt); white-space:nowrap; }
   button:hover { border-color:var(--gold); }
   button.primary { background:var(--gold); color:#1a1408; border-color:var(--gold); font-weight:700; }
-  button:disabled { opacity:.4; cursor:not-allowed; }
-  .savestate { font-size:11px; color:var(--dim); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
 
-  /* repeatable rounds */
-  .round { border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:12px;
-           background:var(--panel2); }
-  .round .rhead { font-size:11px; color:var(--gold); margin-bottom:8px; font-family:monospace; }
-
-  /* 完成列 */
-  .footer-bar { margin-top:22px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;
-                border-top:1px solid var(--line); padding-top:18px; }
-  .empty { color:var(--dim); font-size:13px; padding:40px 0; text-align:center; }
-  @media (max-width:780px){ .runner{ grid-template-columns:1fr; } .progress{ position:static; max-height:none; } }
+  .toolbar { flex:0 0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+             border-top:1px solid var(--line); padding:10px 0; margin-bottom:6px; }
+  .savestate { font-size:11px; color:var(--dim); margin-left:auto; }
+  .empty { color:var(--dim); font-size:14px; padding:48px 20px; text-align:center; line-height:1.8; }
+  @media (max-width:820px){ .runner{ grid-template-columns:1fr; } .guide{ display:none; } }
 </style>
 </head>
 <body>
 <header>
-  <div class="wrap">
-    <h1>MX IP <span>STUDIO</span> · Skill Runner</h1>
-    <div class="sub">選你的 IP 與角色 skill，顧問會逐階段帶你產出 deliverable —— 不是空白表單，是引導式產生。</div>
-  </div>
+  <h1>MX IP <span>STUDIO</span> · Skill Runner</h1>
+  <div class="sub">選好 IP 與角色，AI 顧問會用你角色的專業腳本一步步帶你產出 deliverable —— 不是空白表單。</div>
 </header>
 
 <div class="banner hidden" id="banner"></div>
 
-<div class="wrap">
-  <div class="picker">
-    <div class="field">
-      <label>IP 計畫</label>
-      <select id="ipSel"></select>
-    </div>
-    <div class="field">
-      <label>角色 Skill</label>
-      <select id="skillSel"></select>
-    </div>
-    <div class="field" style="flex:1; min-width:200px;">
-      <div class="skill-summary" id="skillSummary"></div>
-      <div class="outputs" id="skillOutputs"></div>
-    </div>
+<div class="picker">
+  <div class="field"><label>IP 計畫</label><select id="ipSel"></select></div>
+  <div class="field"><label>角色 Skill</label><select id="skillSel"></select></div>
+  <div class="field" style="flex:1; min-width:220px;">
+    <div class="skill-summary" id="skillSummary"></div>
+    <div class="outputs" id="skillOutputs"></div>
   </div>
-
-  <div id="runnerArea"></div>
 </div>
+
+<div id="runnerArea" style="flex:1 1 auto; min-height:0; display:flex; flex-direction:column;"></div>
 
 <script src="vendor/supabase.js"></script>
 <script src="auth.js?v=9"></script>
@@ -120,24 +100,26 @@
 <script src="skill-flows.js"></script>
 <script>
 'use strict';
-// ── Skill Runner（北極星 MVP：階段引導填寫）──
-// 受 auth gate 保護。依登入者 role_members 推導建議 skill，但任何 IP×skill 都可選。
-// 產出存 Supabase skill_runs（upsert，RLS 下只能寫自己的 row）+ localStorage fallback。
-// skill_runs 表/RLS 未部署時自動退回「只存本機」並顯示 banner。
+// ── Skill Runner v2（北極星：AI 顧問對談）──
+// 受 auth gate 保護。AI 顧問後端 = Supabase Edge Function `skill-consult`（持金鑰）。
+// 對話 transcript 存 skill_runs.responses.__chat（+ localStorage fallback）。
 
+const CONSULT_SLUG = 'hyper-processor'; // 實際 slug（Supabase 自動命名；顯示名為 skill-consult，URL 用 hyper-processor）
 const SB = (window.MXIPAuth && MXIPAuth.SB_URL) || '';
-const T = { ip:null, skill:null, run:null, dirty:false, saveTimer:null, online:true };
+const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
+const KICKOFF = '請開始。依我這個角色的腳本，用顧問的方式一步步帶我產出 deliverable：先用一兩句說明你是哪個角色顧問、會怎麼帶我，然後直接問我第一個問題。一次只問一件事。';
+
+const T = { ip:null, skill:null, run:null, busy:false, saveTimer:null, online:true };
 
 function $(id){ return document.getElementById(id); }
 function memberId(){ const e = MXIPAuth.currentEmail(); return e ? e.split('@')[0] : null; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmt(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); }
+function showBanner(msg){ const b=$('banner'); if(!msg){ b.classList.add('hidden'); return; } b.innerHTML=msg; b.classList.remove('hidden'); }
 
-function showBanner(msg){ const b=$('banner'); if(!msg){ b.classList.add('hidden'); return; } b.textContent=msg; b.classList.remove('hidden'); }
-
-// ── 取得登入者的 22 角色（role_members），推導建議 skill ──
+// ── 角色 → 建議 skill ──
 async function myRoleIds(){
-  const id = memberId();
-  if(!id) return [];
+  const id = memberId(); if(!id) return [];
   try{
     const r = await fetch(SB + '/rest/v1/role_members?member_id=eq.' + encodeURIComponent(id) + '&select=role_id',
                           { headers: MXIPAuth.authHeaders() });
@@ -145,318 +127,192 @@ async function myRoleIds(){
     return (await r.json()).map(x=>x.role_id);
   }catch(e){ return []; }
 }
-function recommendedSkills(roleIds){
-  const set = new Set();
-  roleIds.forEach(rid => { const s = ROLE_SKILL[rid]; if(s) set.add(s); });
-  return set;
-}
+function recommendedSkills(roleIds){ const s=new Set(); roleIds.forEach(r=>{ const k=ROLE_SKILL[r]; if(k) s.add(k); }); return s; }
 
-// ── 下拉選單 ──
 function fillIpSelect(){
-  const sel = $('ipSel');
-  const ips = (typeof IPS!=='undefined'?IPS:[]).slice().sort((a,b)=>(a.order_no||99)-(b.order_no||99));
-  sel.innerHTML = ips.map(ip=>'<option value="'+esc(ip.id)+'">'+esc(ip.name)+(ip.status&&ip.status!=='active'?'（'+ip.status+'）':'')+'</option>').join('');
+  const sel=$('ipSel');
+  const ips=(typeof IPS!=='undefined'?IPS:[]).slice().sort((a,b)=>(a.order_no||99)-(b.order_no||99));
+  sel.innerHTML=ips.map(ip=>'<option value="'+esc(ip.id)+'">'+esc(ip.name)+(ip.status&&ip.status!=='active'?'（'+ip.status+'）':'')+'</option>').join('');
 }
 function fillSkillSelect(recSet){
-  const sel = $('skillSel');
-  sel.innerHTML = SKILL_LIST.map(sid=>{
-    const f = SKILL_FLOWS[sid];
-    const rec = recSet.has(sid) ? '　★建議' : '';
-    return '<option value="'+esc(sid)+'">'+esc(f.label)+rec+'</option>';
-  }).join('');
-  // 預設選第一個建議的 skill
+  const sel=$('skillSel');
+  sel.innerHTML=SKILL_LIST.map(sid=>'<option value="'+esc(sid)+'">'+esc(SKILL_FLOWS[sid].label)+(recSet.has(sid)?'　★建議':'')+'</option>').join('');
   for(const sid of SKILL_LIST){ if(recSet.has(sid)){ sel.value=sid; break; } }
 }
-
 function renderSkillMeta(){
-  const f = SKILL_FLOWS[T.skill];
-  $('skillSummary').textContent = f ? f.summary : '';
-  $('skillOutputs').textContent = f ? ('交付物：' + f.outputs.join('、')) : '';
+  const f=SKILL_FLOWS[T.skill];
+  $('skillSummary').textContent=f?f.summary:'';
+  $('skillOutputs').textContent=f?('交付物：'+f.outputs.join('、')):'';
 }
 
-// ── 載入 / 建立 run ──
-function lsKey(){ return 'mxip_run_' + memberId() + '_' + T.ip + '_' + T.skill; }
-function blankRun(){ return { member_id:memberId(), ip_id:T.ip, skill_id:T.skill, responses:{}, current_stage:0, status:'draft' }; }
+// 送給後端的角色腳本（非機密；行為規則在伺服器端）
+function buildBrief(){
+  const f=SKILL_FLOWS[T.skill];
+  return { id:T.skill, label:f.label, summary:f.summary, outputs:f.outputs,
+    stages:f.stages.map(s=>({ cmd:s.cmd, title:s.title, intro:s.intro||'', optional:!!s.optional,
+      repeatable:!!s.repeatable, fields:s.fields.map(fl=>fl.label+(fl.required?'*':'')) })) };
+}
+
+// ── run 載入 / 儲存（transcript 存 responses.__chat）──
+function lsKey(){ return 'mxip_chat_' + memberId() + '_' + T.ip + '_' + T.skill; }
+function blankRun(){ return { member_id:memberId(), ip_id:T.ip, skill_id:T.skill, responses:{__chat:[]}, current_stage:0, status:'draft' }; }
+function chat(){ return (T.run && T.run.responses && T.run.responses.__chat) || []; }
 
 async function loadRun(){
-  T.run = null;
-  // 先試 Supabase
-  let loaded = false;
+  T.run=null; let loaded=false;
   try{
-    const url = SB + '/rest/v1/skill_runs?member_id=eq.' + encodeURIComponent(memberId())
-              + '&ip_id=eq.' + encodeURIComponent(T.ip) + '&skill_id=eq.' + encodeURIComponent(T.skill)
-              + '&select=*';
-    const r = await fetch(url, { headers: MXIPAuth.authHeaders() });
-    if(r.ok){
-      T.online = true; showBanner('');
-      const rows = await r.json();
-      if(rows.length){ T.run = rows[0]; loaded = true; }
-    } else {
-      T.online = false;
-    }
-  }catch(e){ T.online = false; }
-  if(!T.online){
-    showBanner('⚠️ 連不到 skill_runs 表（migration PART7 可能尚未部署）。目前只會存到這台瀏覽器的本機暫存，部署後會自動改存雲端。');
-  }
-  // 雲端沒有 → 試 localStorage
-  if(!loaded){
-    try{ const raw = localStorage.getItem(lsKey()); if(raw){ T.run = JSON.parse(raw); loaded = true; } }catch(e){}
-  }
-  if(!T.run) T.run = blankRun();
-  if(!T.run.responses) T.run.responses = {};
+    const url=SB+'/rest/v1/skill_runs?member_id=eq.'+encodeURIComponent(memberId())
+      +'&ip_id=eq.'+encodeURIComponent(T.ip)+'&skill_id=eq.'+encodeURIComponent(T.skill)+'&select=*';
+    const r=await fetch(url,{ headers:MXIPAuth.authHeaders() });
+    if(r.ok){ T.online=true; showBanner(''); const rows=await r.json(); if(rows.length){ T.run=rows[0]; loaded=true; } }
+    else T.online=false;
+  }catch(e){ T.online=false; }
+  if(!T.online) showBanner('⚠️ 連不到雲端儲存（skill_runs）。對話暫時只存這台瀏覽器，部署/恢復後會改存雲端。');
+  if(!loaded){ try{ const raw=localStorage.getItem(lsKey()); if(raw){ T.run=JSON.parse(raw); loaded=true; } }catch(e){} }
+  if(!T.run) T.run=blankRun();
+  if(!T.run.responses) T.run.responses={};
+  if(!T.run.responses.__chat) T.run.responses.__chat=[];
 }
-
 function persistLocal(){ try{ localStorage.setItem(lsKey(), JSON.stringify(T.run)); }catch(e){} }
-
 async function saveRun(){
-  T.run.member_id = memberId(); T.run.ip_id = T.ip; T.run.skill_id = T.skill;
+  T.run.member_id=memberId(); T.run.ip_id=T.ip; T.run.skill_id=T.skill;
   persistLocal();
-  $('saveState') && ($('saveState').textContent = '儲存中…');
   if(!T.online){ markSaved('已存本機'); return; }
   try{
-    const body = { member_id:T.run.member_id, ip_id:T.run.ip_id, skill_id:T.run.skill_id,
-                   responses:T.run.responses, current_stage:T.run.current_stage, status:T.run.status,
-                   updated_at:new Date().toISOString() };
-    const r = await fetch(SB + '/rest/v1/skill_runs?on_conflict=member_id,ip_id,skill_id', {
-      method:'POST',
-      headers: MXIPAuth.authHeaders({ 'Prefer':'resolution=merge-duplicates,return=representation' }),
-      body: JSON.stringify(body),
-    });
-    if(r.ok){ const rows = await r.json(); if(rows && rows[0]) T.run.id = rows[0].id; markSaved('已存雲端 ✓'); }
-    else { T.online = false; showBanner('⚠️ 雲端儲存失敗（'+r.status+'）。已改存本機，請稍後重試或通知管理者。'); markSaved('已存本機'); }
+    const body={ member_id:T.run.member_id, ip_id:T.run.ip_id, skill_id:T.run.skill_id,
+      responses:T.run.responses, current_stage:T.run.current_stage, status:T.run.status, updated_at:new Date().toISOString() };
+    const r=await fetch(SB+'/rest/v1/skill_runs?on_conflict=member_id,ip_id,skill_id',{
+      method:'POST', headers:MXIPAuth.authHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),
+      body:JSON.stringify(body) });
+    if(r.ok){ const rows=await r.json(); if(rows&&rows[0]) T.run.id=rows[0].id; markSaved('已存雲端 ✓'); }
+    else { T.online=false; markSaved('已存本機'); }
   }catch(e){ T.online=false; markSaved('已存本機'); }
 }
-function markSaved(txt){ T.dirty=false; if($('saveState')) $('saveState').textContent = txt + '　' + new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}); }
-function scheduleSave(){ T.dirty=true; clearTimeout(T.saveTimer); T.saveTimer=setTimeout(saveRun, 800); }
+function markSaved(t){ const el=$('saveState'); if(el) el.textContent=t+'　'+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}); }
 
-// ── 渲染進度欄 ──
-function stageFilled(st){
-  const r = T.run.responses[st.cmd];
-  if(st.repeatable){ const rounds = T.run.responses[st.cmd+'__rounds']; return !!(rounds && rounds.length); }
-  if(!r) return false;
-  return Object.values(r).some(v => String(v||'').trim() !== '');
-}
-function renderProgress(){
-  const f = SKILL_FLOWS[T.skill];
-  const cur = T.run.current_stage;
-  return '<div class="progress">' + f.stages.map((st,i)=>{
-    const filled = stageFilled(st);
-    const cls = 'pstep' + (i===cur?' active':'') + (filled?' filled':'');
-    return '<div class="'+cls+'" data-i="'+i+'">'
-         + '<span class="dot">'+(filled?'✓':(i+1))+'</span>'
-         + '<span><div>'+esc(st.title)+(st.optional?'<span class="tag opt">選用</span>':'')+'</div>'
-         + '<div class="cmd">'+esc(st.cmd)+'</div></span></div>';
-  }).join('') + '</div>';
-}
-
-// ── 渲染欄位 ──
-function fieldInput(field, value, idPrefix){
-  const id = idPrefix + field.key;
-  const v = value==null?'':value;
-  if(field.type==='textarea')
-    return '<textarea id="'+id+'" data-key="'+esc(field.key)+'">'+esc(v)+'</textarea>';
-  if(field.type==='select'){
-    const opts = ['<option value="">— 請選擇 —</option>'].concat(
-      (field.options||[]).map(o=>'<option value="'+esc(o)+'"'+(o===v?' selected':'')+'>'+esc(o)+'</option>'));
-    return '<select id="'+id+'" data-key="'+esc(field.key)+'">'+opts.join('')+'</select>';
+// ── 呼叫 AI 顧問後端 ──
+async function callConsult(){
+  const msgs=chat().map(m=>({ role:m.role, content:m.content })); // 含 kickoff
+  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(),
+    body:JSON.stringify({ skillBrief:buildBrief(), messages:msgs }) });
+  let data={}; try{ data=await r.json(); }catch(e){}
+  if(!r.ok || data.error){
+    const detail = data.error || ('HTTP '+r.status);
+    throw new Error(typeof detail==='string'?detail:JSON.stringify(detail));
   }
-  return '<input type="text" id="'+id+'" data-key="'+esc(field.key)+'" value="'+esc(v)+'">';
-}
-function fieldRow(field, value, idPrefix){
-  return '<div class="frow"><label>'+esc(field.label)+(field.required?' <span class="req">*</span>':'')+'</label>'
-       + fieldInput(field, value, idPrefix)
-       + (field.hint?'<div class="hint">'+esc(field.hint)+'</div>':'')
-       + '</div>';
+  return (data.text||'').trim() || '（顧問沒有回覆內容，請再試一次）';
 }
 
-// ── 渲染目前階段 ──
-function renderStage(){
-  const f = SKILL_FLOWS[T.skill];
-  const i = T.run.current_stage;
-  const st = f.stages[i];
-  const resp = T.run.responses[st.cmd] || {};
-  let html = '<div class="stage"><div class="cmd">'+esc(st.cmd)+'　·　階段 '+(i+1)+'/'+f.stages.length+'</div>'
-           + '<h2>'+esc(st.title)+(st.optional?'<span class="tag opt">選用</span>':'')+'</h2>'
-           + '<div class="intro">'+esc(st.intro||'')+'</div>'
-           + (st.note?'<div class="note">⚙️ '+esc(st.note)+'</div>':'');
-
-  if(st.repeatable){
-    const rounds = T.run.responses[st.cmd+'__rounds'] || [];
-    html += rounds.map((rd,ri)=>'<div class="round"><div class="rhead">已存第 '+(ri+1)+' 輪　<button data-delround="'+ri+'" style="padding:2px 8px;font-size:11px">刪</button></div>'
-          + st.fields.map(fl=>fieldRow(fl, rd[fl.key], 'rd_'+ri+'_')).join('') + '</div>').join('');
-    html += '<div class="round"><div class="rhead">＋ 新增一輪</div>'
-          + st.fields.map(fl=>fieldRow(fl, '', 'newrd_')).join('')
-          + '<button id="addRound">加入這一輪</button></div>';
-  } else {
-    html += st.fields.map(fl=>fieldRow(fl, resp[fl.key], 'f_')).join('');
-  }
-
-  html += '<div class="navrow"><span class="savestate" id="saveState">—</span>'
-        + '<div class="right">'
-        + '<button id="prevBtn"'+(i===0?' disabled':'')+'>← 上一階段</button>'
-        + '<button id="nextBtn" class="primary">'+(i===f.stages.length-1?'完成此階段':'下一階段 →')+'</button>'
-        + '</div></div></div>';
-  return html;
+// ── 渲染 ──
+function renderGuide(){
+  const f=SKILL_FLOWS[T.skill];
+  return '<div class="guide"><h3>流程導覽（'+f.stages.length+' 階段）</h3>'
+    + f.stages.map((s,i)=>'<div class="gstep"><span class="n">'+(i+1)+'</span>'
+        +'<span><div>'+esc(s.title)+(s.optional?'<span class="tag opt">選用</span>':'')+'</div>'
+        +'<div class="cmd">'+esc(s.cmd)+'</div></span></div>').join('')
+    + '</div>';
 }
-
-function renderFooter(){
-  const st = T.run.status;
-  return '<div class="footer-bar">'
-       + '<span class="savestate">狀態：</span>'
-       + '<select id="statusSel">'
-       + '<option value="draft"'+(st==='draft'?' selected':'')+'>草稿 draft</option>'
-       + '<option value="in_review"'+(st==='in_review'?' selected':'')+'>送審 in_review</option>'
-       + '<option value="done"'+(st==='done'?' selected':'')+'>完成 done</option>'
-       + '</select>'
-       + '<button id="exportMd">⬇ 匯出 deliverable (Markdown)</button>'
-       + '<button id="exportJson">⬇ 匯出原始 JSON</button>'
-       + '</div>';
+function bubbles(){
+  return chat().filter(m=>!m.kickoff).map(m=>
+    '<div class="msg '+(m.role==='assistant'?'ai':'user')+'">'
+    +'<div class="who">'+(m.role==='assistant'?'AI 顧問':'你')+'</div>'+fmt(m.content)+'</div>').join('');
 }
-
 function renderRunner(){
-  const area = $('runnerArea');
-  if(!T.skill || !T.ip){ area.innerHTML='<div class="empty">請先選擇 IP 與 skill。</div>'; return; }
-  area.innerHTML = '<div class="runner">' + renderProgress() + '<div>' + renderStage() + '</div></div>' + renderFooter();
-  wireStage();
+  const area=$('runnerArea');
+  if(!T.skill||!T.ip){ area.innerHTML='<div class="empty">請先選擇 IP 與角色 Skill。</div>'; return; }
+  area.innerHTML='<div class="runner">'+renderGuide()
+    +'<div class="chat">'
+    +'<div class="msgs" id="msgs">'+bubbles()+(T.busy?'<div class="typing" id="typing">顧問思考中…</div>':'')+'</div>'
+    +'<div class="composer">'
+    +'<textarea id="input" placeholder="輸入你的回覆，Enter 送出（Shift+Enter 換行）"'+(T.busy?' disabled':'')+'></textarea>'
+    +'<button class="primary" id="sendBtn"'+(T.busy?' disabled':'')+'>送出</button>'
+    +'</div>'
+    +'<div class="toolbar">'
+    +'<button id="deliverBtn"'+(T.busy?' disabled':'')+'>🧩 請顧問彙整成 deliverable</button>'
+    +'<button id="exportMd">⬇ 匯出對話 (Markdown)</button>'
+    +'<button id="restartBtn">↻ 重新開始</button>'
+    +'<select id="statusSel" style="min-width:auto">'
+      +'<option value="draft"'+(T.run.status==='draft'?' selected':'')+'>草稿</option>'
+      +'<option value="in_review"'+(T.run.status==='in_review'?' selected':'')+'>送審</option>'
+      +'<option value="done"'+(T.run.status==='done'?' selected':'')+'>完成</option>'
+    +'</select>'
+    +'<span class="savestate" id="saveState">—</span>'
+    +'</div></div></div>';
+  wire();
+  scrollMsgs();
 }
+function scrollMsgs(){ const m=$('msgs'); if(m) m.scrollTop=m.scrollHeight; }
 
-// ── 互動綁定 ──
-function collectInputs(prefix){
-  const out = {};
-  document.querySelectorAll('[id^="'+prefix+'"]').forEach(el=>{ out[el.dataset.key] = el.value; });
-  return out;
-}
-function captureCurrentStage(){
-  const st = SKILL_FLOWS[T.skill].stages[T.run.current_stage];
-  if(st.repeatable) return; // rounds 由 addRound 個別處理；編輯已存輪即時寫回
-  T.run.responses[st.cmd] = collectInputs('f_');
-}
-function wireStage(){
-  const f = SKILL_FLOWS[T.skill];
-  const st = f.stages[T.run.current_stage];
-
-  // 一般欄位：即時寫回 + debounce 存檔
-  if(!st.repeatable){
-    document.querySelectorAll('[id^="f_"]').forEach(el=>{
-      el.addEventListener('input', ()=>{ captureCurrentStage(); scheduleSave(); refreshProgressDots(); });
-      el.addEventListener('change', ()=>{ captureCurrentStage(); scheduleSave(); refreshProgressDots(); });
-    });
-  } else {
-    // 已存輪：即時寫回陣列
-    const rounds = T.run.responses[st.cmd+'__rounds'] || [];
-    rounds.forEach((rd,ri)=>{
-      document.querySelectorAll('[id^="rd_'+ri+'_"]').forEach(el=>{
-        el.addEventListener('input', ()=>{ rd[el.dataset.key]=el.value; scheduleSave(); });
-      });
-    });
-    const addBtn = $('addRound');
-    if(addBtn) addBtn.onclick = ()=>{
-      const nr = collectInputs('newrd_');
-      const hasVal = Object.values(nr).some(v=>String(v||'').trim()!=='');
-      if(!hasVal){ alert('這一輪還沒填內容'); return; }
-      if(!T.run.responses[st.cmd+'__rounds']) T.run.responses[st.cmd+'__rounds']=[];
-      T.run.responses[st.cmd+'__rounds'].push(nr);
-      saveRun(); renderRunner();
-    };
-    document.querySelectorAll('[data-delround]').forEach(b=>{
-      b.onclick = ()=>{ const ri=+b.dataset.delround; T.run.responses[st.cmd+'__rounds'].splice(ri,1); saveRun(); renderRunner(); };
-    });
+function wire(){
+  const input=$('input'), send=$('sendBtn');
+  if(send) send.onclick=()=>doSend();
+  if(input){
+    input.onkeydown=(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); doSend(); } };
+    input.focus();
   }
-
-  // 進度欄跳階段
-  document.querySelectorAll('.pstep').forEach(p=>{
-    p.onclick = ()=>{ captureCurrentStage(); saveRun(); T.run.current_stage = +p.dataset.i; renderRunner(); };
-  });
-  // 上/下一階段
-  $('prevBtn') && ($('prevBtn').onclick = ()=>{ captureCurrentStage(); if(T.run.current_stage>0) T.run.current_stage--; saveRun(); renderRunner(); });
-  $('nextBtn').onclick = ()=>{
-    captureCurrentStage();
-    if(T.run.current_stage < f.stages.length-1) T.run.current_stage++;
-    saveRun(); renderRunner();
-    window.scrollTo({top:0, behavior:'smooth'});
-  };
-  // 狀態
-  $('statusSel') && ($('statusSel').onchange = (e)=>{ T.run.status = e.target.value; saveRun(); });
-  // 匯出
-  $('exportMd').onclick = exportMarkdown;
-  $('exportJson').onclick = exportJson;
+  if($('deliverBtn')) $('deliverBtn').onclick=()=>doSend('請把目前累積的成果，彙整成一份乾淨、可直接交付的 Markdown deliverable。');
+  if($('exportMd')) $('exportMd').onclick=exportMarkdown;
+  if($('restartBtn')) $('restartBtn').onclick=restart;
+  if($('statusSel')) $('statusSel').onchange=(e)=>{ T.run.status=e.target.value; saveRun(); };
 }
 
-function refreshProgressDots(){
-  const f = SKILL_FLOWS[T.skill];
-  document.querySelectorAll('.pstep').forEach(p=>{
-    const st = f.stages[+p.dataset.i];
-    p.classList.toggle('filled', stageFilled(st));
-    const dot = p.querySelector('.dot');
-    if(dot) dot.textContent = stageFilled(st) ? '✓' : (parseInt(p.dataset.i)+1);
-  });
+async function doSend(forced){
+  if(T.busy) return;
+  const input=$('input');
+  const text = forced || (input ? input.value.trim() : '');
+  if(!text) return;
+  chat().push({ role:'user', content:text });
+  T.busy=true; renderRunner(); saveRun();
+  try{
+    const reply=await callConsult();
+    chat().push({ role:'assistant', content:reply });
+  }catch(e){
+    chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可能是 AI 後端尚未部署，或金鑰未設定。可先重試；若持續，通知管理者。）' });
+  }
+  T.busy=false; renderRunner(); saveRun();
 }
 
-// ── 匯出 deliverable ──
+async function startIfEmpty(){
+  if(chat().length>0){ renderRunner(); return; }
+  chat().push({ role:'user', content:KICKOFF, kickoff:true });
+  T.busy=true; renderRunner(); saveRun();
+  try{ const reply=await callConsult(); chat().push({ role:'assistant', content:reply }); }
+  catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（AI 後端可能尚未部署。部署完成後，按「↻ 重新開始」即可。）' }); }
+  T.busy=false; renderRunner(); saveRun();
+}
+function restart(){
+  if(!confirm('重新開始會清空這個 IP×角色 的對話，確定？')) return;
+  T.run.responses.__chat=[]; saveRun(); startIfEmpty();
+}
+
+// ── 匯出 ──
 function ipName(id){ const m=(typeof IPS!=='undefined'?IPS:[]).find(x=>x.id===id); return m?m.name:id; }
 function buildMarkdown(){
-  const f = SKILL_FLOWS[T.skill];
-  let md = '# ' + f.label + ' — ' + ipName(T.ip) + '\n\n';
-  md += '> 成員：' + memberId() + '　·　狀態：' + T.run.status + '　·　產出：' + new Date().toLocaleString('zh-TW') + '\n\n';
-  md += f.summary + '\n\n';
-  f.stages.forEach(st=>{
-    md += '## ' + st.title + '  `' + st.cmd + '`' + (st.optional?'（選用）':'') + '\n\n';
-    if(st.repeatable){
-      const rounds = T.run.responses[st.cmd+'__rounds'] || [];
-      if(!rounds.length){ md += '_（尚無紀錄）_\n\n'; }
-      rounds.forEach((rd,ri)=>{
-        md += '### 第 ' + (ri+1) + ' 輪\n\n';
-        st.fields.forEach(fl=>{ const v=(rd[fl.key]||'').trim(); if(v){ md += '**'+fl.label+'**：\n'+v+'\n\n'; } });
-      });
-    } else {
-      const resp = T.run.responses[st.cmd] || {};
-      let any=false;
-      st.fields.forEach(fl=>{ const v=String(resp[fl.key]||'').trim(); if(v){ any=true; md += '**'+fl.label+'**：\n'+v+'\n\n'; } });
-      if(!any) md += '_（尚未填寫）_\n\n';
-    }
-  });
+  const f=SKILL_FLOWS[T.skill];
+  let md='# '+f.label+' — '+ipName(T.ip)+'\n\n> 成員：'+memberId()+'　·　'+new Date().toLocaleString('zh-TW')+'\n\n';
+  chat().filter(m=>!m.kickoff).forEach(m=>{ md+=(m.role==='assistant'?'**AI 顧問**：\n':'**你**：\n')+m.content+'\n\n---\n\n'; });
   return md;
 }
-function download(name, text, mime){
-  const blob = new Blob([text], {type:mime||'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url), 1500);
-}
-function safeName(){ return (T.skill+'_'+T.ip+'_'+memberId()).replace(/[^\w\-]/g,'-'); }
-function exportMarkdown(){ download(safeName()+'.md', buildMarkdown(), 'text/markdown;charset=utf-8'); }
-function exportJson(){ download(safeName()+'.json', JSON.stringify(T.run, null, 2), 'application/json'); }
+function download(name,text,mime){ const b=new Blob([text],{type:mime||'text/plain;charset=utf-8'}); const u=URL.createObjectURL(b);
+  const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1500); }
+function exportMarkdown(){ download((T.skill+'_'+T.ip+'_'+memberId()).replace(/[^\w\-]/g,'-')+'.md', buildMarkdown(),'text/markdown;charset=utf-8'); }
 
-// ── 切換 IP / skill ──
+// ── 切換 / 啟動 ──
 async function onPick(){
-  T.ip = $('ipSel').value;
-  T.skill = $('skillSel').value;
-  renderSkillMeta();
-  await loadRun();
-  renderRunner();
+  if(T.busy) return;
+  T.ip=$('ipSel').value; T.skill=$('skillSel').value;
+  renderSkillMeta(); await loadRun(); await startIfEmpty();
 }
-
-// ── 啟動 ──
 async function boot(){
-  await MXIPAuth.init({ gate:true });        // 未登入導回 index
-  if(!(MXIPAuth.currentUser() && MXIPAuth.isAllowed())) return; // gate 會跳轉
-
+  await MXIPAuth.init({ gate:true });
+  if(!(MXIPAuth.currentUser() && MXIPAuth.isAllowed())) return;
   fillIpSelect();
-  const roleIds = await myRoleIds();
-  const recSet = recommendedSkills(roleIds);
+  const recSet=recommendedSkills(await myRoleIds());
   fillSkillSelect(recSet);
-  if(!roleIds.length){
-    showBanner('ℹ️ 你目前在 role_members 沒有指定角色，所以沒有「建議」skill。你仍可自由選任一 skill 試跑；要綁角色請到 roles 頁設定。');
-  }
-
-  $('ipSel').onchange = onPick;
-  $('skillSel').onchange = onPick;
+  $('ipSel').onchange=onPick; $('skillSel').onchange=onPick;
   await onPick();
-
-  // 登出時清掉畫面（避免座位殘留）
-  MXIPAuth.onChange(s=>{ if(!(s && s.user)){ $('runnerArea').innerHTML='<div class="empty">已登出。</div>'; } });
+  MXIPAuth.onChange(s=>{ if(!(s&&s.user)) $('runnerArea').innerHTML='<div class="empty">已登出。</div>'; });
 }
-
 boot().catch(e=>{ console.error(e); $('runnerArea').innerHTML='<div class="empty">載入失敗：'+esc(e.message||e)+'</div>'; });
 </script>
 </body>

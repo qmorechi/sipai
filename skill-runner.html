@@ -70,6 +70,9 @@
   .guide { border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:10px; overflow:auto; }
   .guide h3 { font-size:12px; color:var(--dim); margin:2px 6px 8px; letter-spacing:.05em; font-weight:600; }
   .guide .focus { font-size:11px; color:var(--ok); margin:0 6px 10px; line-height:1.6; }
+  .covbox { border:1px solid var(--line); border-radius:8px; background:var(--panel2); padding:9px 10px; margin:0 0 10px; }
+  .covbox h3 { font-size:11px; color:var(--ok); margin:0 0 7px; letter-spacing:.03em; font-weight:600; }
+  .covrow { font-size:12px; color:var(--dim); padding:3px 0; line-height:1.45; }
   .gstep { display:flex; gap:8px; align-items:flex-start; padding:7px 8px; border-radius:7px; font-size:12.5px; color:var(--dim); }
   .gstep .n { width:18px; height:18px; border-radius:50%; border:1px solid var(--line); flex:0 0 auto;
               display:flex; align-items:center; justify-content:center; font-size:10px; }
@@ -86,6 +89,14 @@
   .composer textarea { flex:1; background:var(--panel2); color:var(--txt); border:1px solid var(--line); border-radius:10px;
     padding:11px 13px; font:14px/1.5 inherit; outline:none; resize:none; min-height:48px; max-height:160px; }
   .composer textarea:focus { border-color:var(--gold); }
+  .attach-btn { cursor:pointer; border:1px solid var(--line); border-radius:10px; padding:11px 13px; background:var(--panel2); font-size:17px; line-height:1; }
+  .attach-btn:hover { border-color:var(--gold); }
+  .attach-row { display:flex; gap:8px; flex-wrap:wrap; padding:4px 0 0; }
+  .thumb { position:relative; }
+  .thumb img { width:54px; height:54px; object-fit:cover; border-radius:8px; border:1px solid var(--line); display:block; }
+  .thumb button { position:absolute; top:-6px; right:-6px; width:18px; height:18px; padding:0; border-radius:50%; background:#5a3340; color:#fcc; border:0; font-size:12px; line-height:1; }
+  .bimgs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .bimgs img { max-width:180px; max-height:180px; border-radius:8px; border:1px solid var(--line); }
   .toolbar { flex:0 0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; border-top:1px solid var(--line); padding:10px 0; margin-bottom:6px; }
   .savestate { font-size:11px; color:var(--dim); margin-left:auto; }
   .empty { color:var(--dim); font-size:14px; padding:48px 20px; text-align:center; line-height:1.9; }
@@ -124,7 +135,7 @@ const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
 const KICKOFF = '請開始。依我這個「指定角色」的職責，用顧問的方式一步步帶我產出我這塊的 deliverable：先用一兩句說明你是我的什麼角色顧問、會怎麼帶我，然後直接問我第一個、最該先決定的問題。一次只問一件事。';
 const LBL = { todo:'未開始', doing:'進行中', review:'送審', done:'完成' };
 
-const T = { ip:null, isAdmin:false, view:'home', skill:null, roleId:null, run:null, busy:false, online:true };
+const T = { ip:null, isAdmin:false, view:'home', skill:null, roleId:null, run:null, busy:false, online:true, pending:[] };
 
 function $(id){ return document.getElementById(id); }
 function memberId(){ const e=MXIPAuth.currentEmail(); return e?e.split('@')[0]:null; }
@@ -134,6 +145,27 @@ function showBanner(msg){ const b=$('banner'); if(!msg){ b.classList.add('hidden
 function pad2(n){ return (n<10?'0':'')+n; }
 function roleById(id){ return ROLE_DATA.roles.find(r=>r.id===id); }
 function ipName(id){ const m=(typeof IPS!=='undefined'?IPS:[]).find(x=>x.id===id); return m?m.name:id; }
+
+// ── 附圖：圖片縮圖、影片抽關鍵影格（皆在前端轉成 jpeg dataURL）──
+function toPayload(d){ const m=/^data:(image\/[a-z]+);base64,(.+)$/.exec(d||''); return m?{media_type:m[1],data:m[2]}:null; }
+function scaleCanvas(srcW,srcH){ const max=1280; const sc=Math.min(1,max/Math.max(srcW,srcH)); const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(srcW*sc)); c.height=Math.max(1,Math.round(srcH*sc)); return c; }
+function imageToDataUrl(file){ return new Promise(res=>{ const img=new Image(); img.onload=()=>{ try{ const c=scaleCanvas(img.width,img.height); c.getContext('2d').drawImage(img,0,0,c.width,c.height); res(c.toDataURL('image/jpeg',0.85)); }catch(e){ res(null); } }; img.onerror=()=>res(null); img.src=URL.createObjectURL(file); }); }
+function extractFrames(file,n){ n=n||4; return new Promise(res=>{ const v=document.createElement('video'); v.preload='metadata'; v.muted=true; v.playsInline=true; v.src=URL.createObjectURL(file); const frames=[]; let times=[],idx=0;
+  v.onloadedmetadata=()=>{ const dur=v.duration||0; if(!dur||!isFinite(dur)){ res(frames); return; } for(let i=1;i<=n;i++) times.push(dur*i/(n+1)); seek(); };
+  function seek(){ if(idx>=times.length){ try{URL.revokeObjectURL(v.src);}catch(e){} res(frames); return; } v.currentTime=times[idx]; }
+  v.onseeked=()=>{ try{ const c=scaleCanvas(v.videoWidth,v.videoHeight); c.getContext('2d').drawImage(v,0,0,c.width,c.height); frames.push(c.toDataURL('image/jpeg',0.82)); }catch(e){} idx++; seek(); };
+  v.onerror=()=>res(frames); }); }
+async function addFiles(files){
+  const list=Array.from(files||[]); if(!list.length) return;
+  for(const f of list){
+    try{
+      if(f.type.indexOf('image/')===0){ const d=await imageToDataUrl(f); if(d) T.pending.push(d); }
+      else if(f.type.indexOf('video/')===0){ const fr=await extractFrames(f,4); fr.forEach(d=>{ if(d) T.pending.push(d); }); }
+    }catch(e){}
+  }
+  if(T.pending.length>8) T.pending=T.pending.slice(0,8);
+  renderChat();
+}
 
 function fillIpSelect(){
   const sel=$('ipSel');
@@ -146,7 +178,7 @@ async function rolesForIp(ip){
     if(r.ok){ T.online=true; return (await r.json()).map(x=>x.role_id); } T.online=false; return []; }catch(e){ T.online=false; return []; }
 }
 async function myRunsForIp(ip){
-  try{ const r=await fetch(SB+'/rest/v1/skill_runs?member_id=eq.'+encodeURIComponent(memberId())+'&ip_id=eq.'+encodeURIComponent(ip)+'&select=skill_id,status,updated_at',{headers:MXIPAuth.authHeaders()});
+  try{ const r=await fetch(SB+'/rest/v1/skill_runs?member_id=eq.'+encodeURIComponent(memberId())+'&ip_id=eq.'+encodeURIComponent(ip)+'&select=skill_id,status,updated_at,coverage:responses->__coverage',{headers:MXIPAuth.authHeaders()});
     if(r.ok){ T.online=true; return await r.json(); } T.online=false; return []; }catch(e){ T.online=false; return []; }
 }
 
@@ -161,25 +193,31 @@ async function renderHome(){
   const rmap={}; runs.forEach(x=>{ rmap[x.skill_id]=x; });
   if(!T.online) showBanner('⚠️ 連不到雲端，進度與對話暫時只存本機，恢復後自動同步。'); else showBanner('');
   const wk=Date.now()-7*864e5;
-  function stOf(id){ const sk=ROLE_SKILL[id]; const run=sk?rmap[sk+'#'+id]:null;
-    let s='todo'; if(run) s=run.status==='done'?'done':(run.status==='in_review'?'review':'doing');
+  // 累積式 + 真實覆蓋率：狀態與完成度都看 AI 評的交付項覆蓋率，而非自填。
+  function covOf(id){ const sk=ROLE_SKILL[id]; const run=sk?rmap[sk+'#'+id]:null;
+    const r=roleById(id); const total=(r&&r.deliverables)?r.deliverables.length:0;
+    const cov=(run&&Array.isArray(run.coverage))?run.coverage:[];
+    const covered=cov.filter(c=>c&&c.status==='covered').length;
+    const partial=cov.filter(c=>c&&c.status==='partial').length;
+    let s='todo'; if(total&&covered>=total) s='done'; else if(covered>0||partial>0||run) s='doing';
     const up=run&&run.updated_at?new Date(run.updated_at):null;
-    return { s:s, wk:!!(up&&up.getTime()>=wk) }; }
+    return { s:s, covered:covered, partial:partial, total:total, wk:!!(up&&up.getTime()>=wk) }; }
   if(!roleIds.length){
     area.innerHTML='<div class="home"><div class="empty">你在這個 IP 還沒有指定角色。<br>請先到 <a href="roles.html?u='+esc(memberId())+'&ip='+esc(T.ip)+'">角色選擇頁</a> 選好你的角色，再回來。</div></div>';
     return;
   }
   const ids=roleIds.slice().sort((a,b)=>a-b);
-  let done=0; ids.forEach(id=>{ if(stOf(id).s==='done') done++; });
-  const total=ids.length, pct=Math.round(done/total*100);
+  const cmap={}; ids.forEach(id=>{ cmap[id]=covOf(id); });
+  let sumCov=0,sumTot=0,done=0; ids.forEach(id=>{ const c=cmap[id]; sumCov+=c.covered+0.5*c.partial; sumTot+=c.total; if(c.s==='done')done++; });
+  const pct=sumTot?Math.round(sumCov/sumTot*100):0;
   let html='<div class="home"><div class="home-top">'
-    +'<div class="pbar-wrap"><div class="pbar-top"><span>'+(T.isAdmin?'全部角色':'我的協作角色')+'　本週完成度</span><span><b>'+pct+'%</b>　已完成 '+done+' / '+total+'</span></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>'
+    +'<div class="pbar-wrap"><div class="pbar-top"><span>'+(T.isAdmin?'全部角色':'我的協作角色')+'　實質完成度（交付項覆蓋率）</span><span><b>'+pct+'%</b>　完成角色 '+done+' / '+ids.length+'</span></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>'
     + (T.isAdmin?'<button id="teamBtn">📊 全 IP 進度表</button>':'')
     + '</div><div class="tiles">'
-    + ids.map(id=>{ const r=roleById(id); if(!r) return ''; const st=stOf(id); const sk=ROLE_SKILL[id];
+    + ids.map(id=>{ const r=roleById(id); if(!r) return ''; const c=cmap[id]; const sk=ROLE_SKILL[id];
         return '<div class="tile" data-id="'+id+'"><div class="rn">'+pad2(id)+'　'+esc(SKILL_FLOWS[sk].label)+'</div>'
           +'<div class="rname">'+esc(r.name)+'</div><div class="rscope">'+esc(r.scope)+'</div>'
-          +'<div class="tstat"><span class="pstat s-'+st.s+'">'+LBL[st.s]+'</span>'+(st.wk?'<span class="wk">● 本週</span>':'')+'</div></div>';
+          +'<div class="tstat"><span class="pstat s-'+c.s+'">'+LBL[c.s]+'</span><span style="font-size:11px;color:var(--dim)">涵蓋 '+c.covered+'/'+c.total+'</span>'+(c.wk?'<span class="wk">● 本週</span>':'')+'</div></div>';
       }).join('')
     + '</div></div>';
   area.innerHTML=html;
@@ -264,22 +302,39 @@ function buildBrief(){
 function buildRoleFocus(){ if(!T.roleId) return null; const r=roleById(T.roleId); if(!r) return null;
   return { id:r.id, name:r.name, en:r.en, scope:r.scope, deliverables:r.deliverables, risk:r.risk }; }
 async function callConsult(){
-  const msgs=chat().map(m=>({ role:m.role, content:m.content }));
-  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(), body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), messages:msgs }) });
+  const arr=chat();
+  const msgs=arr.map(m=>({ role:m.role, content:m.content }));
+  const last=arr[arr.length-1];
+  const images=(last&&last.role==='user'&&Array.isArray(last.images))?last.images.map(toPayload).filter(Boolean):[];
+  const r=await fetch(CONSULT_URL,{ method:'POST', headers:MXIPAuth.authHeaders(), body:JSON.stringify({ skillBrief:buildBrief(), roleFocus:buildRoleFocus(), messages:msgs, images:images }) });
   let data={}; try{ data=await r.json(); }catch(e){}
   if(!r.ok || data.error){ const d=data.error||('HTTP '+r.status); throw new Error(typeof d==='string'?d:JSON.stringify(d)); }
-  return (data.text||'').trim() || '（顧問沒有回覆內容，請再試一次）';
+  return { text:(data.text||'').trim()||'（顧問沒有回覆內容，請再試一次）', coverage:(Array.isArray(data.coverage)?data.coverage:null) };
 }
 
 // ── 對談渲染 ──
+function renderCovBox(){
+  if(!T.roleId) return '';
+  const r=roleById(T.roleId); const items=(r&&r.deliverables)||[];
+  if(!items.length) return '';
+  const cov=(T.run&&T.run.responses&&T.run.responses.__coverage)||[];
+  const ic={covered:'<span style="color:var(--ok)">✓</span>',partial:'<span style="color:var(--warn)">◑</span>',todo:'<span style="color:var(--dim)">○</span>'};
+  const covered=items.filter((d,i)=>cov[i]&&cov[i].status==='covered').length;
+  return '<div class="covbox"><h3>你的交付項覆蓋率（'+covered+'/'+items.length+'）</h3>'
+    + items.map((d,i)=>{ const st=(cov[i]&&cov[i].status)||'todo'; return '<div class="covrow">'+(ic[st]||ic.todo)+' '+esc(d)+'</div>'; }).join('')
+    + '</div>';
+}
 function renderGuide(){
   const f=SKILL_FLOWS[T.skill];
   const focus = T.roleId ? ('★ 你的角色：'+esc(roleById(T.roleId).name)+'　顧問只帶你做這塊，其餘階段是上下游脈絡') : '';
-  return '<div class="guide"><h3>流程全貌（'+f.stages.length+' 階段）</h3>'+(focus?'<div class="focus">'+focus+'</div>':'')
+  return '<div class="guide">'+renderCovBox()+'<h3>流程全貌（'+f.stages.length+' 階段）</h3>'+(focus?'<div class="focus">'+focus+'</div>':'')
     + f.stages.map((s,i)=>'<div class="gstep"><span class="n">'+(i+1)+'</span><span><div>'+esc(s.title)+'</div><div class="cmd">'+esc(s.cmd)+'</div></span></div>').join('')+'</div>';
 }
 function bubbles(){
-  return chat().filter(m=>!m.kickoff).map(m=>'<div class="msg '+(m.role==='assistant'?'ai':'user')+'"><div class="who">'+(m.role==='assistant'?'AI 顧問':'你')+'</div>'+fmt(m.content)+'</div>').join('');
+  return chat().filter(m=>!m.kickoff).map(m=>{
+    const imgs=(m.images&&m.images.length)?'<div class="bimgs">'+m.images.map(d=>'<img src="'+d+'">').join('')+'</div>':'';
+    return '<div class="msg '+(m.role==='assistant'?'ai':'user')+'"><div class="who">'+(m.role==='assistant'?'AI 顧問':'你')+'</div>'+imgs+fmt(m.content)+'</div>';
+  }).join('');
 }
 function renderChat(){
   const area=$('runnerArea');
@@ -289,7 +344,9 @@ function renderChat(){
     +'<div class="chat-role">'+(r?'<b>'+esc(r.name)+'</b>（'+esc(r.en)+'）<span class="pill">'+esc(f.label)+'</span>':'<b>'+esc(f.label)+'</b>')+'</div></div>'
     +'<div class="runner">'+renderGuide()+'<div class="chat">'
     +'<div class="msgs" id="msgs">'+bubbles()+(T.busy?'<div class="typing">顧問思考中…</div>':'')+'</div>'
-    +'<div class="composer"><textarea id="input" placeholder="輸入你的回覆，Enter 送出（Shift+Enter 換行）"'+(T.busy?' disabled':'')+'></textarea>'
+    +(T.pending.length?'<div class="attach-row">'+T.pending.map((d,i)=>'<div class="thumb"><img src="'+d+'"><button data-rm="'+i+'" title="移除">×</button></div>').join('')+'</div>':'')
+    +'<div class="composer"><label class="attach-btn" title="上傳參考圖 / 手稿 / 影片（影片會自動抽關鍵影格）">📎<input type="file" id="fileInput" accept="image/*,video/*" multiple hidden></label>'
+    +'<textarea id="input" placeholder="輸入你的回覆，或上傳參考圖/手稿讓 AI 看（Enter 送出）"'+(T.busy?' disabled':'')+'></textarea>'
     +'<button class="primary" id="sendBtn"'+(T.busy?' disabled':'')+'>送出</button></div>'
     +'<div class="toolbar"><button id="deliverBtn"'+(T.busy?' disabled':'')+'>🧩 請顧問彙整成 deliverable</button>'
     +'<button id="exportMd">⬇ 匯出對話</button><button id="restartBtn">↻ 重新開始</button>'
@@ -302,6 +359,8 @@ function renderChat(){
 function scrollMsgs(){ const m=$('msgs'); if(m) m.scrollTop=m.scrollHeight; }
 function wire(){
   if($('backBtn')) $('backBtn').onclick=()=>{ if(!T.busy) renderHome(); };
+  if($('fileInput')) $('fileInput').onchange=(e)=>{ addFiles(e.target.files); e.target.value=''; };
+  document.querySelectorAll('[data-rm]').forEach(b=>{ b.onclick=()=>{ T.pending.splice(+b.dataset.rm,1); renderChat(); }; });
   const input=$('input');
   if($('sendBtn')) $('sendBtn').onclick=()=>doSend();
   if(input){ input.onkeydown=(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSend(); } }; input.focus(); }
@@ -313,16 +372,17 @@ function wire(){
 async function doSend(forced){
   if(T.busy) return;
   const input=$('input'); const text=forced||(input?input.value.trim():'');
-  if(!text) return;
-  chat().push({ role:'user', content:text }); T.busy=true; renderChat(); saveRun();
-  try{ chat().push({ role:'assistant', content:await callConsult() }); }
+  const imgs=T.pending.slice();
+  if(!text && !imgs.length) return;
+  chat().push({ role:'user', content:text||'（請看我上傳的參考圖）', images:imgs }); T.pending=[]; T.busy=true; renderChat(); saveRun();
+  try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; }
   catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（可先重試；若持續，通知管理者。）' }); }
   T.busy=false; renderChat(); saveRun();
 }
 async function startIfEmpty(){
   if(chat().length>0){ renderChat(); return; }
   chat().push({ role:'user', content:KICKOFF, kickoff:true }); T.busy=true; renderChat(); saveRun();
-  try{ chat().push({ role:'assistant', content:await callConsult() }); }
+  try{ const res=await callConsult(); chat().push({ role:'assistant', content:res.text }); if(res.coverage) T.run.responses.__coverage=res.coverage; }
   catch(e){ chat().push({ role:'assistant', content:'⚠️ 顧問暫時連不上：'+e.message+'\n\n（後端可能尚未部署完成，稍後按「↻ 重新開始」再試。）' }); }
   T.busy=false; renderChat(); saveRun();
 }

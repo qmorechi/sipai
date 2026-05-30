@@ -1040,8 +1040,10 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===name));
   document.querySelectorAll('.tab-panel').forEach(p=> p.classList.toggle('active', p.id==='tab-'+name));
   document.querySelector('.ip-picker').style.display = name==='roles' ? '' : 'none';
-  if(name==='skills'  && !skillState)  loadSkills().then(renderSkillTab);
-  if(name==='engines' && !engineState) loadEngines().then(renderEngineTab);
+  // 未登入不載入分頁資料（含 skill/engine 版本），保持空白。
+  const loggedIn = !(window.MXIPAuth && !MXIPAuth.currentUser());
+  if(loggedIn && name==='skills'  && !skillState)  loadSkills().then(renderSkillTab);
+  if(loggedIn && name==='engines' && !engineState) loadEngines().then(renderEngineTab);
 }
 document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> switchTab(b.dataset.tab)));
 
@@ -1049,6 +1051,13 @@ document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()
 async function init() {
   renderIpPicker();
   document.getElementById('navRoles').href = `roles.html?ip=${encodeURIComponent(currentIpId)}`;
+  // 未登入：不載資料、清空顯示（主控台含成員指派，不對未登入者顯示）。
+  if (window.MXIPAuth && !MXIPAuth.currentUser()) {
+    assignments = {}; skillState = null; engineState = null;
+    setSyncState('ok');
+    renderProgress(); renderVacant(); renderMatrix(); renderInviteList();
+    return;
+  }
   await loadAssignments();
   renderProgress();
   renderVacant();
@@ -1056,6 +1065,11 @@ async function init() {
   renderInviteList();
 }
 (window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(init);
+// 登入/登出即時重繪：登出清空、登入載回；並重載當前分頁。
+if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(() => {
+  skillState = null; engineState = null;
+  init().then(() => { const a = document.querySelector('.tab-btn.active'); if (a) switchTab(a.dataset.tab); });
+});
 </script>
 </body>
 </html>

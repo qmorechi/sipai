@@ -341,6 +341,14 @@ let engineMaxNum = 0;     // engine_config 最大版號（'v3' → 3）
 
 // ── 載入真實版本資料 ──
 async function loadData(){
+  // 未登入：不載資料、停用發布流程（後台發版頁必須登入）。
+  if (window.MXIPAuth && !MXIPAuth.currentUser()) {
+    state.ready = false; state.needsLogin = true; SKILLS = [];
+    setSyncState('ok');
+    renderAll();
+    return;
+  }
+  state.needsLogin = false;
   setSyncState('syncing');
   try{
     const [versions, bindings, engines] = await Promise.all([
@@ -412,7 +420,9 @@ function renderAll(){
   const empty = document.getElementById('govEmpty');
   if(!state.ready){
     empty.style.display = 'block';
-    empty.innerHTML = '尚無版本資料 —— 請先在 Supabase Dashboard SQL Editor 跑 <code>supabase/migrations/20260528_skill_engine_governance.sql</code> 建表＋seed，再回來發布。';
+    empty.innerHTML = state.needsLogin
+      ? '請先用右上角「用 MX 公司帳號登入」登入，才能檢視與發布版本。'
+      : '尚無版本資料 —— 請先在 Supabase Dashboard SQL Editor 跑 <code>supabase/migrations/20260528_skill_engine_governance.sql</code> 建表＋seed，再回來發布。';
   }else{
     empty.style.display = 'none';
   }
@@ -599,6 +609,8 @@ document.getElementById('webhookCfg').addEventListener('click', ()=>{
 // ── 啟動 ──
 renderWebhookCfg();
 (window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(loadData);
+// 登入/登出即時重繪：登出停用發版、登入載回版本資料。
+if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(loadData);
 </script>
 </body>
 </html>

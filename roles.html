@@ -113,7 +113,7 @@ li{margin:.35em 0}
 <script src="roles-data.js"></script>
 <!-- 方案 C / P1 登入層（草稿，未啟用前不影響運作） -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth.js?v=3"></script>
+<script src="auth.js?v=4"></script>
 <nav class="breadcrumb">
   <a href="index.html">MX IP STUDIO</a>
   <span class="sep">›</span>
@@ -180,7 +180,9 @@ const myIp      = ipById.get(myIpId) || IPS[0];
 const CACHE_KEY = `mxip_role_members_${myIpId}_v3`;
 function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch { return {}; } }
 function saveCache(a) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(a)); } catch {} }
-let assignments = loadCache();
+function clearCache() { try { localStorage.removeItem(CACHE_KEY); } catch {} }
+// 不在啟動就吃快取：角色指派不對未登入者顯示，登入後才從伺服器載入。
+let assignments = {};
 
 // ── Supabase CRUD ──
 async function sbFetch(path, opts={}) {
@@ -194,6 +196,13 @@ async function sbFetch(path, opts={}) {
 }
 
 async function loadAllAssignments() {
+  // 未登入：不顯示任何指派，並清掉本機快取（共用/家用瀏覽器防外洩）。
+  if (window.MXIPAuth && !MXIPAuth.currentUser()) {
+    assignments = {};
+    clearCache();
+    setSyncState('ok');
+    return;
+  }
   setSyncState('syncing');
   try {
     const rows = await sbFetch(`role_members?ip_id=eq.${encodeURIComponent(myIp.id)}&select=role_id,member_id&order=created_at.asc`);
@@ -517,9 +526,17 @@ renderIdentityBadge();
 renderFlow();
 renderMyPanel();
 selectRole(1);
+function reloadAndRender() {
+  return loadAllAssignments().then(() => {
+    renderFlow(); renderMyPanel();
+    const a = document.querySelector('.node-btn.active');
+    selectRole(a ? Number(a.dataset.id) : 1);
+  });
+}
 (window.MXIPAuth ? MXIPAuth.init() : Promise.resolve())
-  .then(loadAllAssignments)
-  .then(() => { renderFlow(); renderMyPanel(); selectRole(1); });
+  .then(reloadAndRender);
+// 登入/登出即時重繪：登出立刻清掉指派顯示，登入後載回。
+if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(reloadAndRender);
 </script>
 </body>
 </html>

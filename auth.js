@@ -167,6 +167,14 @@
     }
   }
 
+  // 登入狀態變更通知：頁面註冊 callback，登入/登出時被呼叫（帶 session，登出為 null）。
+  // 用途：未登入時頁面該清掉/不顯示敏感資料（如角色指派），登入後再載。
+  const _changeListeners = [];
+  function onChange(cb) { if (typeof cb === 'function') _changeListeners.push(cb); }
+  function notifyChange() {
+    _changeListeners.forEach(function (cb) { try { cb(_session); } catch (e) { console.error('[auth] onChange listener error', e); } });
+  }
+
   // 頁面載入呼叫一次。回傳 session（可能為 null）。
   async function init() {
     await refreshSession();
@@ -183,6 +191,7 @@
       _session = session || null;
       renderBar();
       resetIdle();              // 登入後開始計時、登出後清掉
+      notifyChange();           // 通知頁面重載/清空資料
     });
     startIdleWatch();
     resetIdle();                // 若一進來就是登入態，立即起算
@@ -192,7 +201,7 @@
   }
 
   global.MXIPAuth = {
-    init, signIn, signOut, requireLogin, guardWrite, authHeaders,
+    init, signIn, signOut, requireLogin, guardWrite, authHeaders, onChange,
     currentUser, currentEmail, accessToken, isAllowed, refreshSession,
     SB_URL, SB_ANON,
   };

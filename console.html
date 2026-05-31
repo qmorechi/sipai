@@ -13,6 +13,11 @@ body{margin:0;background:#0d0d0f;color:#e8e6e0;font-family:-apple-system,BlinkMa
 header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:24px}
 header.top h1{font-size:28px;margin:0 0 4px;line-height:1.2}
 header.top .subtitle{color:#a3a097;font-size:13px;margin:0}
+/* Bento 概覽條（大數字 highlight，跟全站一致）*/
+.console-stat{display:flex;gap:30px;flex-wrap:wrap;padding:16px 22px;margin-bottom:14px;background:linear-gradient(140deg,#1a1a1d,#141417);border:1px solid rgba(255,255,255,.1);border-top:3px solid #5ba89e;border-radius:18px}
+.console-stat .cs-n b{font-size:30px;font-weight:800;line-height:1}
+.console-stat .cs-n.g b{color:#c5a46b} .console-stat .cs-n.t b{color:#5ba89e} .console-stat .cs-n.v b{color:#8b7ec8}
+.console-stat .cs-n span{display:block;font-size:11px;color:#a3a097;margin-top:4px;letter-spacing:.06em}
 .sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-left:8px;vertical-align:middle;transition:background .3s}
 .sync-dot.syncing{background:#c5a46b;animation:pulse .8s infinite}
 .sync-dot.error{background:#ff8b73}
@@ -278,6 +283,12 @@ table.mapping thead th{background:#0d0d0f;font-size:11px;color:#a3a097;font-weig
       <span class="ip-status-pill" id="ipStatusPill"></span>
     </div>
   </header>
+
+  <div class="console-stat">
+    <div class="cs-n g"><b>6</b><span>六大 IP</span></div>
+    <div class="cs-n t"><b>22</b><span>專業角色</span></div>
+    <div class="cs-n v"><b>4</b><span>大流程</span></div>
+  </div>
 
   <div style="margin:16px 0 8px">
     <div style="background:#181c23;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden">

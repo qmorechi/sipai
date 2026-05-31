@@ -335,7 +335,6 @@ async function loadProgress() {
     } catch (e) { /* leave empty */ }
   }
 }
-loadProgress();
 
 // ── 會後結論回填：把最新一場會議的 per-IP 摘要填進三欄 ──
 function escMN(s){ return String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
@@ -369,7 +368,30 @@ async function fillMeetingNotes() {
     }
   });
 }
-fillMeetingNotes();
+
+// ── 開機：先把「上線/暫停」狀態同步成主控台 ip_projects 的即時值（之前是寫死，會跟主控台脫鉤）──
+async function syncActiveStatus() {
+  if (!window.MXIPAuth) return;
+  try { await MXIPAuth.init(); } catch (e) { return; }
+  try {
+    const r = await fetch(MXIPAuth.SB_URL + '/rest/v1/ip_projects?select=codename,status', { headers: MXIPAuth.authHeaders() });
+    if (!r.ok) return;
+    const rows = await r.json();
+    const byCode = {}; rows.forEach(x => { if (x && x.codename) byCode[x.codename] = x.status; });
+    let changed = false;
+    IPS.forEach(ip => {
+      const st = byCode[ip.rolesIp];            // ip_projects.codename = progress 的 rolesIp（SIPAI…）
+      if (st) { const a = (st === 'active'); if (a !== ip.active) { ip.active = a; changed = true; } }
+    });
+    if (changed) { renderContent(); }            // 狀態跟寫死值不同 → 用即時值重畫卡片
+  } catch (e) { /* 讀不到就保留靜態預設 */ }
+}
+async function boot() {
+  await syncActiveStatus();   // 先對齊上線/暫停
+  await loadProgress();       // 再填完成度條（只填上線中的）
+  await fillMeetingNotes();   // 再填會後回填三欄
+}
+boot();
 </script>
 </body>
 </html>

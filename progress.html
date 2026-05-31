@@ -31,7 +31,25 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
 .wrap{padding:36px 60px 80px;max-width:1400px;margin:0 auto;}
 
 .ip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr));gap:22px;}
-.ip{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;position:relative;border-top:3px solid var(--c);}
+/* ── Bento 便當盒網格：概覽格 + 主線放大 + 概念縮小 + 主控台捷徑 ── */
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-flow:dense;gap:18px;align-items:stretch;}
+.bento .full{grid-column:1 / -1;}
+.bento .feat{grid-column:span 2;}
+.tile-stat{background:linear-gradient(140deg,#1a1a22,#141419);border:1px solid var(--border);border-top:3px solid var(--accent-2);border-radius:20px;padding:18px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.tile-stat .st-lbl{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.tile-stat .st-nums{display:flex;gap:26px;flex-wrap:wrap;}
+.tile-stat .st-n b{font-size:30px;font-weight:800;line-height:1;}
+.tile-stat .st-n span{display:block;font-size:11px;color:var(--muted);margin-top:3px;}
+.tile-stat .st-n.on b{color:#6bc47a;} .tile-stat .st-n.off b{color:#f8d66d;}
+.tile-cta{background:linear-gradient(140deg,rgba(197,164,107,.14),rgba(91,168,158,.08));border:1px solid rgba(197,164,107,.3);border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center;gap:5px;text-decoration:none;color:inherit;transition:transform .16s,border-color .16s,box-shadow .16s;}
+.tile-cta:hover{transform:scale(1.02);border-color:var(--accent-1);box-shadow:0 12px 34px rgba(0,0,0,.4);}
+.tile-cta .cta-big{font-size:16px;font-weight:700;color:var(--text);}
+.tile-cta .cta-sub{font-size:12px;color:var(--muted);}
+.tile-cta .cta-arr{margin-top:8px;font-family:'DM Mono',monospace;color:var(--accent-1);font-size:13px;}
+.tile-cta:focus-visible{outline:2px solid var(--accent-1);outline-offset:3px;}
+@media(max-width:900px){ .bento{grid-template-columns:repeat(2,1fr);} .bento .feat{grid-column:span 2;} }
+@media(max-width:560px){ .bento{grid-template-columns:1fr;gap:14px;} .bento .feat,.bento .full{grid-column:span 1;} }
+.ip{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;position:relative;border-top:3px solid var(--c);}
 .ip .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
 .ip .name{font-size:18px;font-weight:700;}
 .ip .codename{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.1em;}
@@ -57,7 +75,7 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
 .intro .pipe{color:var(--accent-1);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;display:block;margin-top:8px;}
 
 .ip{cursor:pointer;transition:transform .15s, border-color .15s;text-decoration:none;color:inherit;display:flex;}
-.ip:hover{transform:translateY(-2px);border-color:var(--c);}
+.ip:hover{transform:scale(1.02);border-color:var(--c);box-shadow:0 14px 40px rgba(0,0,0,.4);}
 /* 無障礙：鍵盤焦點看得見（§1 focus-states）*/
 .ip:focus-visible,.team-cta:focus-visible{outline:2px solid var(--accent-1);outline-offset:3px;border-color:var(--c);}
 .breadcrumb a:focus-visible,.back-link:focus-visible,.other-ips-list a:focus-visible{outline:2px solid var(--accent-1);outline-offset:2px;border-radius:4px;}
@@ -89,8 +107,8 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
 .other-ips-list a{font-size:12px;padding:10px 16px;min-height:40px;display:inline-flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:999px;color:var(--muted);text-decoration:none;transition:.15s;}
 .other-ips-list a:hover{border-color:var(--accent-1);color:var(--accent-1);}
 .ipbar{margin:14px 0 4px;}
-.ipbar-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px;}
-.ipbar-top b{color:var(--c);font-size:14px;}
+.ipbar-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted);margin-bottom:6px;gap:8px;}
+.ipbar-top .pct-big{color:var(--c);font-size:28px;font-weight:800;line-height:1;letter-spacing:-.01em;}
 .ipbar-track{height:8px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;}
 .ipbar-track>i{display:block;height:100%;background:var(--c);transition:width .4s;}
 .ipbar-meta{font-size:11px;color:var(--muted);margin-top:6px;}
@@ -232,7 +250,7 @@ function renderHeader() {
 }
 
 // ── 渲染單張 IP 卡(detail = true 時更大更詳細) ──
-function ipCardHTML(ip, detail=false) {
+function ipCardHTML(ip, detail=false, extraClass='') {
   const opacity = (!detail && !ip.active) ? ';opacity:.7' : '';
   const link = `progress.html?ip=${ip.id}`;
   const tag = detail ? 'div' : 'a';
@@ -258,7 +276,7 @@ function ipCardHTML(ip, detail=false) {
     ? `<div class="footer-meta"><span>監測頻道 — ${ip.channels}</span><span>本週訊息 0</span></div>`
     : `<div class="footer-meta"><span>狀態 — ${ip.status || '—'}</span><span>—</span></div>`;
 
-  return `<${tag} class="ip" ${href} style="--c:${ip.color}${opacity}">
+  return `<${tag} class="ip ${extraClass}" ${href} style="--c:${ip.color}${opacity}">
     <div class="head">
       <span class="name">${ip.name}</span>
       <span class="codename">${ip.codename}${ip.tier2 ? ' · ' + ip.tier2 : ''}</span>
@@ -298,8 +316,23 @@ function renderContent() {
       </div>
     `;
   } else {
-    // 6 IP grid 總覽
-    el.innerHTML = `<div class="ip-grid">${IPS.map(ip => ipCardHTML(ip, false)).join('')}</div>`;
+    // 6 IP Bento 總覽：概覽格 + 主線放大(feat) + 概念縮小 + 主控台捷徑
+    const actives = IPS.filter(i => i.active);
+    const pauseds = IPS.filter(i => !i.active);
+    const stat = `<div class="tile-stat full">
+      <div class="st-lbl">本週概覽 · 六大 IP</div>
+      <div class="st-nums">
+        <div class="st-n"><b>${IPS.length}</b><span>IP 總數</span></div>
+        <div class="st-n on"><b>${actives.length}</b><span>上線中</span></div>
+        <div class="st-n off"><b>${pauseds.length}</b><span>暫停</span></div>
+      </div></div>`;
+    const cta = `<a class="tile-cta" href="console.html">
+      <div class="cta-big">⚙ 主控台</div>
+      <div class="cta-sub">調整 IP 上線 / 暫停、指派角色</div>
+      <div class="cta-arr">前往 →</div></a>`;
+    const cards = actives.map((ip, i) => ipCardHTML(ip, false, i === 0 ? 'feat' : ''))
+      .concat(pauseds.map(ip => ipCardHTML(ip, false, '')));
+    el.innerHTML = `<div class="bento">${stat}${cards.join('')}${cta}</div>`;
   }
 }
 
@@ -310,9 +343,9 @@ renderContent();
 // ── 從 skill_runs 把個人貢獻聚合成每個 IP 的真實完成度 ──
 function renderBar(pct, done, total, wkN, memN) {
   if (!total) return '<div class="ipbar-empty">尚無成員指派角色</div>';
-  return '<div class="ipbar-top"><span>實質完成度（交付項覆蓋率）</span><span><b>' + pct + '%</b>　完成角色 ' + done + '/' + total + '</span></div>'
+  return '<div class="ipbar-top"><span>實質完成度（交付項覆蓋率）</span><b class="pct-big">' + pct + '%</b></div>'
     + '<div class="ipbar-track"><i style="width:' + pct + '%"></i></div>'
-    + '<div class="ipbar-meta">本週更新 ' + wkN + ' 角色　·　參與成員 ' + memN + ' 人</div>';
+    + '<div class="ipbar-meta">完成角色 ' + done + '/' + total + '　·　本週更新 ' + wkN + ' 角色　·　參與成員 ' + memN + ' 人</div>';
 }
 async function loadProgress() {
   if (!window.MXIPAuth) return;

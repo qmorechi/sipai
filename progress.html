@@ -241,7 +241,7 @@ function ipCardHTML(ip, detail=false) {
   const fullSections = `
     <div class="section">
       <div class="section-title"><span class="icon">📈</span>本週進度</div>
-      <div class="section-content" id="prog-${ip.id}"><p class="empty">${ip.active ? '等會後整理回填（從會議結論帶入）' : ip.progress}</p></div>
+      <div class="section-content" id="prog-${ip.id}"><p class="empty">${ip.active ? '等會後整理回填（從會議結論帶入）' : (ip.progress || '暫停中 — 仍可在 Skill Runner 持續充實內容，養好再上線')}</p></div>
     </div>
     ${ip.active ? `
     <div class="section">

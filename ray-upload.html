@@ -253,21 +253,17 @@
         <div class="next-item-num">1</div>
         <div class="next-item-text"><span class="auto">系統自動</span>把新版寫進版本庫（Supabase <code>skill_versions</code>）並掛到測試環</div>
       </div>
-      <div class="next-item" id="nextGit">
-        <div class="next-item-num">2</div>
-        <div class="next-item-text"><span class="auto">系統自動</span>把檔案 commit 進 GitHub 並打版本標籤（你不用碰 git）</div>
-      </div>
       <div class="next-item" id="nextSlack">
-        <div class="next-item-num">3</div>
-        <div class="next-item-text"><span class="you">通知 qmore</span>（Slack #mx-ip-通知）：「Ray 發布了新版，待你決定是否推穩定區」</div>
+        <div class="next-item-num">2</div>
+        <div class="next-item-text"><span class="auto">系統自動</span>發 Slack 通知到 <code>#mx-ip-通知</code>：「Ray 發布了新版，待你決定是否推穩定區」</div>
       </div>
       <div class="next-item">
-        <div class="next-item-num">4</div>
+        <div class="next-item-num">3</div>
         <div class="next-item-text"><span class="you">qmore 把關</span>：確認沒問題 → 推到操作員的穩定區；有問題 → 擋住，你再修</div>
       </div>
     </div>
     <div class="webhook-row">
-      GitHub commit / Slack 通知需後端 webhook（金鑰留伺服器端，不進前端）·
+      發版時自動發 Slack 通知（webhook 金鑰留伺服器端，不進前端）；GitHub commit + 版本標籤<strong>尚未自動化</strong> ·
       <a id="webhookCfg"></a>
     </div>
   </div>
@@ -568,17 +564,16 @@ async function fireWebhook(ver, today){
 function showSuccess(ver, hookFired){
   const isEngine = state.type === 'engine';
   const target = isEngine ? `engine_config ${ver}` : `${state.skillKey} v${ver}`;
-  const gitLine = hookFired
-    ? `<div><strong>GitHub：</strong> 已觸發後端 commit + tag <code>${esc(isEngine?'engine_config':state.skillKey)}@${esc(ver)}</code></div>`
-    : `<div class="pend"><strong>GitHub / Slack：</strong> 待後端 webhook 串接（尚未設定，本次只寫了版本庫）</div>`;
-  const slackLine = hookFired ? `<div><strong>通知：</strong> Slack #mx-ip-通知 → qmore</div>` : '';
+  const notifyLine = hookFired
+    ? `<div><strong>通知：</strong> 已發 Slack <code>#mx-ip-通知</code> → qmore（待守門）</div>`
+    : `<div class="pend"><strong>通知：</strong> 後端 webhook 未設定，本次只寫了版本庫（沒發 Slack）</div>`;
   document.getElementById('modalSummary').innerHTML = `
     <div><strong>發布內容：</strong> <code>${esc(target)}</code></div>
     <div><strong>狀態：</strong> 已寫進 Supabase 版本庫${isEngine?'（is_stable=false，待 qmore 切換）':'，並掛到 automation-test + test'}</div>
-    ${gitLine}${slackLine}
+    ${notifyLine}
+    <div class="pend"><strong>GitHub：</strong> commit + tag 尚未自動化（這版只進 Supabase 版本庫）</div>
     <div><strong>說明：</strong> ${esc(changelog())}</div>`;
-  // 更新 next-steps 的 git/slack 狀態
-  document.getElementById('nextGit').classList.toggle('pending', !hookFired);
+  // 更新 next-steps 的 Slack 通知狀態（沒設 webhook 時標 pending）
   document.getElementById('nextSlack').classList.toggle('pending', !hookFired);
   document.getElementById('modal').classList.add('show');
 }

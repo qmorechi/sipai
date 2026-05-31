@@ -286,7 +286,7 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
       </button>
       <div class="hubBody" style="display:none;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,.08)">
         <p style="font-size:13px;color:#9ba7b5;margin:11px 0 12px;line-height:1.6">把大家在 Skill Runner 的交付，AI 合成成「決策驅動」的會議議程（<b style="color:#71d1c2">只含上線中 IP</b>）。拖曳排序、折疊聚焦、一鍵貼 Slack。</p>
-        <a href="meeting.html" style="display:inline-block;background:#f2b35e;color:#111318;text-decoration:none;border-radius:8px;font-weight:800;font-size:13px;padding:8px 15px">⚙️ 開啟本週開會包 →</a>
+        <button class="hubOpen" data-src="meeting.html" data-title="📋 本週開會包" style="background:#f2b35e;color:#111318;border:none;border-radius:8px;font-family:inherit;font-weight:800;font-size:13px;padding:8px 15px;cursor:pointer">⚙️ 開啟本週開會包（浮層）</button>
       </div>
     </div>
     <div style="background:#181c23;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden">
@@ -295,8 +295,19 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
       </button>
       <div class="hubBody" style="display:none;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,.08)">
         <p style="font-size:13px;color:#9ba7b5;margin:11px 0 12px;line-height:1.6">看目前這個 IP 的 22 角色互動節點圖、誰認領哪塊、過載指標（唯讀，適合 brief 新成員）。</p>
-        <a id="navRoles" href="roles.html" style="display:inline-block;background:#20242c;color:#fff4e3;text-decoration:none;border:1px solid rgba(255,255,255,.14);border-radius:8px;font-weight:800;font-size:13px;padding:8px 15px">🔗 開啟角色互動圖 →</a>
+        <button id="navRoles" class="hubOpen" data-roles="1" data-title="👥 角色互動圖（唯讀）" style="background:#20242c;color:#fff4e3;border:1px solid rgba(255,255,255,.14);border-radius:8px;font-family:inherit;font-weight:800;font-size:13px;padding:8px 15px;cursor:pointer">🔗 開啟角色互動圖（浮層）</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Hub 浮層：在主控台上彈出開會包 / 角色圖（不換頁，內嵌 iframe） -->
+  <div id="hubModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:9998;backdrop-filter:blur(2px)">
+    <div style="position:absolute;inset:3%;background:#0f1116;border:1px solid rgba(255,255,255,.15);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.55)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.1);flex:0 0 auto">
+        <span id="hubModalTitle" style="font-weight:800;font-size:14px;color:#fff4e3"></span>
+        <button id="hubModalClose" style="background:#20242c;border:1px solid rgba(255,255,255,.14);color:#fff4e3;border-radius:7px;font-family:inherit;font-weight:800;font-size:13px;padding:6px 13px;cursor:pointer">✕ 關閉</button>
+      </div>
+      <iframe id="hubFrame" title="hub" style="flex:1 1 auto;width:100%;border:0;background:#0f1116"></iframe>
     </div>
   </div>
 
@@ -1100,6 +1111,28 @@ document.querySelectorAll('.hubHead').forEach(btn => btn.addEventListener('click
   body.style.display = open ? 'block' : 'none';
   if(caret) caret.textContent = open ? '▾' : '▸';
 }));
+
+// ── Hub 浮層：點「開啟」在主控台上彈出（iframe 內嵌、不換頁）──
+function openHub(src, title){
+  document.getElementById('hubModalTitle').textContent = title || '';
+  document.getElementById('hubFrame').src = src;
+  document.getElementById('hubModalOverlay').style.display = 'block';
+}
+function closeHub(){
+  document.getElementById('hubModalOverlay').style.display = 'none';
+  document.getElementById('hubFrame').src = 'about:blank';
+}
+document.querySelectorAll('.hubOpen').forEach(b => b.addEventListener('click', () => {
+  const src = b.dataset.roles ? ('roles.html?ip=' + encodeURIComponent(currentIpId)) : b.dataset.src;
+  openHub(src, b.dataset.title);
+}));
+document.getElementById('hubModalClose').addEventListener('click', closeHub);
+document.getElementById('hubModalOverlay').addEventListener('click', e => { if(e.target.id==='hubModalOverlay') closeHub(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape' && document.getElementById('hubModalOverlay').style.display==='block') closeHub(); });
+// 內嵌頁載入後藏掉它自己的登入列（主控台已有一個，避免雙重）
+document.getElementById('hubFrame').addEventListener('load', function(){
+  try{ const d=this.contentDocument; const bar=d&&d.getElementById('mxip-authbar'); if(bar) bar.style.display='none'; }catch(e){}
+});
 
 // ── IP 專案管理（磚塊：上線/暫停切換 + 新增專案，寫 ip_projects）──
 function renderProjects(){

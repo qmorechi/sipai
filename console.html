@@ -265,7 +265,6 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
     <a href="index.html">SIPAI.STUDIO</a>
     <span class="sep">›</span>
     <span class="current">主控台</span>
-    <span class="extra">· <a href="meeting.html">📋 本週開會包 →</a> · <a href="roles.html" id="navRoles">開角色互動圖(唯讀) →</a></span>
   </nav>
 
   <header class="top">
@@ -279,6 +278,27 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
       <span class="ip-status-pill" id="ipStatusPill"></span>
     </div>
   </header>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 8px">
+    <div style="background:#181c23;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden">
+      <button class="hubHead" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;color:#fff4e3;font-family:inherit;font-weight:800;font-size:15px;padding:13px 16px;cursor:pointer">
+        <span>📋 本週開會包</span><span class="hubCaret" style="color:#9ba7b5;font-size:12px">▸</span>
+      </button>
+      <div class="hubBody" style="display:none;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,.08)">
+        <p style="font-size:13px;color:#9ba7b5;margin:11px 0 12px;line-height:1.6">把大家在 Skill Runner 的交付，AI 合成成「決策驅動」的會議議程（<b style="color:#71d1c2">只含上線中 IP</b>）。拖曳排序、折疊聚焦、一鍵貼 Slack。</p>
+        <a href="meeting.html" style="display:inline-block;background:#f2b35e;color:#111318;text-decoration:none;border-radius:8px;font-weight:800;font-size:13px;padding:8px 15px">⚙️ 開啟本週開會包 →</a>
+      </div>
+    </div>
+    <div style="background:#181c23;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden">
+      <button class="hubHead" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;color:#fff4e3;font-family:inherit;font-weight:800;font-size:15px;padding:13px 16px;cursor:pointer">
+        <span>👥 角色互動圖（唯讀）</span><span class="hubCaret" style="color:#9ba7b5;font-size:12px">▸</span>
+      </button>
+      <div class="hubBody" style="display:none;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,.08)">
+        <p style="font-size:13px;color:#9ba7b5;margin:11px 0 12px;line-height:1.6">看目前這個 IP 的 22 角色互動節點圖、誰認領哪塊、過載指標（唯讀，適合 brief 新成員）。</p>
+        <a id="navRoles" href="roles.html" style="display:inline-block;background:#20242c;color:#fff4e3;text-decoration:none;border:1px solid rgba(255,255,255,.14);border-radius:8px;font-weight:800;font-size:13px;padding:8px 15px">🔗 開啟角色互動圖 →</a>
+      </div>
+    </div>
+  </div>
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="roles">📋 角色指派</button>
@@ -1071,6 +1091,15 @@ function switchTab(name){
   if(loggedIn && name==='projects') renderProjects();
 }
 document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> switchTab(b.dataset.tab)));
+
+// ── 頂部左右兩欄折疊（本週開會包 / 角色互動圖）──
+document.querySelectorAll('.hubHead').forEach(btn => btn.addEventListener('click', () => {
+  const body = btn.parentElement.querySelector('.hubBody');
+  const caret = btn.querySelector('.hubCaret');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  if(caret) caret.textContent = open ? '▾' : '▸';
+}));
 
 // ── IP 專案管理（磚塊：上線/暫停切換 + 新增專案，寫 ip_projects）──
 function renderProjects(){

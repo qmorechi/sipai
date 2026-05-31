@@ -1,51 +1,108 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MX IP STUDIO｜團隊總表</title>
 <style>
-  body { font-family: 'Noto Sans TC', sans-serif; background: #0d0d0f; color: #e8e6e0;
-         display: flex; flex-direction: column; align-items: center; justify-content: center;
-         min-height: 100vh; margin: 0; gap: 0; }
-  h1 { font-size: 28px; letter-spacing: .08em; margin-bottom: 8px; }
-  h1 span { color: #c5a46b; }
-  p { color: #7a7870; font-size: 13px; margin-bottom: 28px; }
-  .gate-msg { color: #c5a46b; font-size: 13px; margin-bottom: 24px; min-height: 1em; }
-  .links { display: flex; flex-direction: column; gap: 16px; width: 360px; transition: opacity .2s; }
-  .links.locked { opacity: .35; pointer-events: none; filter: grayscale(.4); }
-  a { display: block; padding: 20px 28px; background: #161618; border: 1px solid #2a2a30;
-      border-radius: 10px; text-decoration: none; color: #e8e6e0; transition: border-color .2s; }
-  a:hover { border-color: #c5a46b; }
-  .link-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-  .link-desc { font-size: 12px; color: #7a7870; }
-  .tag { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 3px;
-         background: rgba(197,164,107,.15); color: #c5a46b; margin-bottom: 8px;
-         font-family: monospace; letter-spacing: .05em; }
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0d0f; --surface:#161618; --surface2:#1e1e22; --border:#2a2a30;
+  --text:#e8e6e0; --muted:#a3a097;
+  --gold:#c5a46b; --teal:#5ba89e; --red:#c96b5a; --violet:#8b7ec8;
+}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;font-weight:400;line-height:1.55;min-height:100vh;}
+.shell{max-width:880px;margin:0 auto;padding:64px 32px 80px;}
+
+/* ── Hero ── */
+header{position:relative;padding-bottom:24px;border-bottom:1px solid var(--border);}
+header::after{content:'';position:absolute;bottom:-1px;left:0;width:56px;height:2px;background:var(--gold);}
+h1{font-family:'DM Mono',monospace;font-size:clamp(26px,4vw,40px);font-weight:500;letter-spacing:.04em;}
+h1 span{color:var(--gold);}
+.sub{margin-top:10px;font-size:13.5px;color:var(--muted);letter-spacing:.03em;}
+
+/* 概覽統計（大數字 highlight）*/
+.stat{margin-top:22px;display:flex;gap:30px;flex-wrap:wrap;padding:16px 22px;background:linear-gradient(140deg,#1a1a1d,#141417);border:1px solid var(--border);border-top:3px solid var(--teal);border-radius:18px;}
+.stat .n b{font-size:30px;font-weight:800;line-height:1;}
+.stat .n.g b{color:var(--gold);} .stat .n.t b{color:var(--teal);} .stat .n.v b{color:var(--violet);}
+.stat .n span{display:block;font-size:11px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace;letter-spacing:.06em;}
+
+.gate{margin:26px 0 6px;font-size:13px;color:var(--gold);min-height:1em;letter-spacing:.02em;}
+
+/* ── Bento 入口 ── */
+.links{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:6px;transition:opacity .2s,filter .2s;}
+.links.locked{opacity:.4;pointer-events:none;filter:grayscale(.4);}
+.card{position:relative;display:flex;flex-direction:column;gap:9px;padding:22px 24px;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--c,var(--gold));border-radius:20px;text-decoration:none;color:inherit;transition:transform .16s,border-color .16s,box-shadow .16s;}
+.card:hover{transform:scale(1.02);border-color:var(--c,var(--gold));box-shadow:0 14px 40px rgba(0,0,0,.4);}
+.card:focus-visible{outline:2px solid var(--c,var(--gold));outline-offset:3px;}
+.card.feat{grid-column:span 2;}
+.tag{align-self:flex-start;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.08em;padding:3px 10px;border-radius:999px;background:rgba(197,164,107,.15);color:var(--gold);}
+.card .t-icon{font-size:26px;margin-bottom:2px;}
+.title{font-size:16px;font-weight:700;}
+.feat .title{font-size:20px;}
+.desc{font-size:12.5px;color:var(--muted);line-height:1.6;}
+.go{margin-top:auto;padding-top:8px;font-family:'DM Mono',monospace;font-size:12px;color:var(--c,var(--gold));}
+
+/* 說明（門檻外，永遠可點）*/
+.help{display:flex;align-items:center;gap:12px;margin-top:18px;padding:16px 22px;background:var(--surface);border:1px solid var(--border);border-radius:16px;text-decoration:none;color:inherit;transition:border-color .16s,transform .16s;}
+.help:hover{border-color:var(--teal);transform:scale(1.01);}
+.help:focus-visible{outline:2px solid var(--teal);outline-offset:3px;}
+.help .h-i{font-size:22px;}
+.help .h-t{font-size:14px;font-weight:700;}
+.help .h-s{font-size:12px;color:var(--muted);}
+.help .h-go{margin-left:auto;font-family:'DM Mono',monospace;color:var(--teal);font-size:13px;}
+
+@media(max-width:600px){
+  .shell{padding:40px 20px 60px;}
+  .links{grid-template-columns:1fr;}
+  .card.feat{grid-column:span 1;}
+  .stat{gap:22px;}
+}
 </style>
 </head>
 <body>
-  <h1>MX IP <span>STUDIO</span></h1>
-  <p>六大 IP 計畫 · 主控面板</p>
-  <div class="gate-msg" id="gateMsg">　</div>
+<div class="shell">
+  <header>
+    <h1>MX IP <span>STUDIO</span></h1>
+    <p class="sub">六大 IP 計畫 · 協作主控面板</p>
+    <div class="stat">
+      <div class="n g"><b>6</b><span>六大 IP</span></div>
+      <div class="n t"><b>22</b><span>專業角色</span></div>
+      <div class="n v"><b>4</b><span>大流程</span></div>
+    </div>
+  </header>
+
+  <div class="gate" id="gateMsg">　</div>
+
   <div class="links locked" id="links">
-    <a href="skill-runner.html">
-      <div class="tag">RUNNER ★</div>
-      <div class="link-title">Skill Runner · 引導式產出</div>
-      <div class="link-desc">選你的 IP 與角色 skill,顧問逐階段帶你產出 deliverable(品牌核心/角色聖經/分鏡/多方討論/全流程)。不是空白表單。</div>
+    <a href="skill-runner.html" class="card feat" style="--c:var(--gold)">
+      <div class="t-icon">🎯</div>
+      <span class="tag">RUNNER ★ 主入口</span>
+      <div class="title">Skill Runner · 引導式產出</div>
+      <div class="desc">選你的 IP 與角色 skill，AI 顧問逐階段帶你產出 deliverable（品牌核心 / 角色聖經 / 分鏡 / 多方討論 / 全流程）。不是空白表單，是有人帶著你做。</div>
+      <div class="go">開始產出 →</div>
     </a>
-    <a href="progress.html">
-      <div class="tag">PROGRESS</div>
-      <div class="link-title">六大 IP 進度總表</div>
-      <div class="link-desc">每週本週進度 / 待解問題 / 下週重點。點進每個 IP 可看詳細(含角色團隊入口)</div>
+    <a href="progress.html" class="card" style="--c:var(--teal)">
+      <span class="tag" style="background:rgba(91,168,158,.15);color:var(--teal)">PROGRESS</span>
+      <div class="title">六大 IP 進度總表</div>
+      <div class="desc">本週進度 / 待解問題 / 下週重點。點進每個 IP 看詳細，含角色團隊入口。</div>
+      <div class="go">看進度 →</div>
     </a>
-    <a href="timeline.html">
-      <div class="tag">HISTORY</div>
-      <div class="link-title">MX IP 整體發展歷程</div>
-      <div class="link-desc">從 2026/03 起的會議決策大事紀錄,適合新成員 brief</div>
+    <a href="timeline.html" class="card" style="--c:var(--violet)">
+      <span class="tag" style="background:rgba(139,126,200,.15);color:var(--violet)">HISTORY</span>
+      <div class="title">MX IP 整體發展歷程</div>
+      <div class="desc">從 2026/03 起的會議決策大事紀，適合新成員 brief 全貌。</div>
+      <div class="go">看歷程 →</div>
     </a>
   </div>
-  <p style="text-align:center;margin-top:20px"><a href="help.html" style="color:#aab2c0;font-size:13px;text-decoration:none">📖 使用說明（新成員先看這個）</a></p>
+
+  <a href="help.html" class="help">
+    <span class="h-i">📖</span>
+    <div><div class="h-t">使用說明</div><div class="h-s">新成員先看這個 · 不用登入也能看</div></div>
+    <span class="h-go">前往 →</span>
+  </a>
+</div>
 
 <script src="vendor/supabase.js"></script>
 <script src="auth.js?v=9"></script>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>本週開會包 · MX-IP-Studio</title>
+<style>
+  :root{ --bg:#0f1116; --card:#181c23; --card2:#20242c; --text:#fff4e3; --dim:#aab2c0;
+    --gold:#f2b35e; --line:rgba(255,255,255,.12); --green:#71d1c2; --yellow:#f8d66d; --red:#ff8b73; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.6}
+  .wrap{max-width:880px;margin:0 auto;padding:26px 18px 90px}
+  .crumb{font-size:12px;color:var(--dim);margin-bottom:6px}
+  .crumb a{color:var(--dim);text-decoration:none} .crumb a:hover{color:var(--gold)}
+  h1{font-size:24px;margin:4px 0 2px;font-weight:900}
+  .sub{color:var(--dim);font-size:13px;margin:0 0 18px}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+  button{appearance:none;font-family:inherit;cursor:pointer;border-radius:9px;font-weight:800;
+    font-size:13px;padding:9px 15px;border:1px solid var(--line);background:var(--card2);color:var(--text);transition:.15s}
+  button:hover{border-color:var(--gold)} button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--gold);color:#111318;border-color:var(--gold)}
+  button.ghost{background:transparent}
+  .msg{font-size:13px;color:var(--dim);margin:8px 0}
+  .msg.err{color:var(--red)}
+  /* 卡片 */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:13px;margin:12px 0;overflow:hidden;transition:.12s}
+  .card.dragging{opacity:.4} .card.dragover{border-color:var(--gold);box-shadow:0 0 0 2px rgba(242,179,94,.3)}
+  .chead{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none}
+  .grip{color:var(--dim);font-size:16px;cursor:grab;padding:0 2px}
+  .grip:active{cursor:grabbing}
+  .light{font-size:15px;flex:0 0 auto}
+  .cname{font-weight:800;font-size:16px;flex:0 0 auto}
+  .cmeta{font-size:11.5px;color:var(--dim)}
+  .ctop{margin-left:auto;font-size:12px;color:var(--gold);font-weight:700;text-align:right;max-width:40%}
+  .caret{color:var(--dim);font-size:12px;flex:0 0 auto;transition:.15s}
+  .card.open .caret{transform:rotate(90deg)}
+  .cbody{display:none;padding:0 16px 15px 16px;border-top:1px solid var(--line)}
+  .card.open .cbody{display:block}
+  .blk{margin-top:12px}
+  .blk h4{margin:0 0 5px;font-size:12px;letter-spacing:.06em;color:var(--dim);font-weight:800;text-transform:uppercase}
+  .blk ul{margin:0;padding-left:18px} .blk li{margin:3px 0;font-size:14px}
+  .decision li{color:var(--gold);font-weight:600}
+  .blocker li{color:var(--red)}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--dim);margin:3px 4px 0 0}
+  .ed{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--text);
+    font-family:inherit;font-size:13px;padding:8px;margin-top:10px;resize:vertical;min-height:54px;display:none}
+  .card.editing .ed{display:block} .card.editing .cbody>.blk{display:none}
+  .section{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 18px;margin:12px 0}
+  .section h3{margin:0 0 8px;font-size:15px;font-weight:800}
+  .section.cross h3{color:var(--gold)} .section.risk h3{color:var(--red)}
+  .section ul{margin:0;padding-left:18px} .section li{margin:4px 0;font-size:14px}
+  .empty{color:var(--dim);text-align:center;padding:50px 0;font-size:14px}
+  .hint{font-size:11.5px;color:var(--dim);margin:2px 0 0}
+  code{background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.88em;color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="index.html">← MX-IP-Studio</a> · 主控功能</div>
+  <h1>📋 本週開會包</h1>
+  <p class="sub">把大家在 Skill Runner 的交付，合成成「決策驅動」的會議議程。拖曳排序、折疊聚焦、一鍵貼 Slack。</p>
+
+  <div class="bar">
+    <button id="genBtn" class="primary">⚙️ 生成本週開會包</button>
+    <button id="slackBtn" class="ghost" disabled>📤 貼議程到 Slack</button>
+    <button id="mdBtn" class="ghost" disabled>⬇️ 匯出 Markdown</button>
+    <span id="weekLbl" class="cmeta"></span>
+  </div>
+  <p class="hint">提示：卡片左側 ⠿ 可拖曳排序（把卡別人的、紅燈的排前面）；點標題列折疊/展開——開會時收起全部、討論到誰才展開誰。</p>
+
+  <div id="msg" class="msg"></div>
+  <div id="area"><div class="empty">按「生成本週開會包」開始。系統會讀本週各 IP 的交付，請 AI 合成議程。</div></div>
+</div>
+
+<script src="vendor/supabase.js"></script>
+<script src="auth.js?v=9"></script>
+<script src="ips.js"></script>
+<script src="roles-data.js"></script>
+<script>
+const CONSULT_SLUG = 'hyper-processor';
+const SB = (window.MXIPAuth && MXIPAuth.SB_URL) || '';
+const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// 狀態：本週開會包資料
+let STATE = { cards: [], cross: [], risks: [], week: '' };
+
+function roleById(id){ return (ROLE_DATA.roles||[]).find(r => r.id === id) || null; }
+function phaseZh(ph){ return (ROLE_DATA.phaseMeta && ROLE_DATA.phaseMeta[ph] && ROLE_DATA.phaseMeta[ph].zh) || ph || ''; }
+function lightOf(pct){ return pct >= 60 ? '🟢' : pct >= 30 ? '🟡' : '🔴'; }
+function isoWeek(d){ const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=x.getUTCDay()||7; x.setUTCDate(x.getUTCDate()+4-day); const ys=new Date(Date.UTC(x.getUTCFullYear(),0,1)); return x.getUTCFullYear()+'-W'+String(Math.ceil((((x-ys)/86400000)+1)/7)).padStart(2,'0'); }
+
+// ── 收集單一 IP 本週原料（每角色取最新一份）──
+async function gatherIP(ip){
+  let runs = [];
+  try{
+    const r = await fetch(SB + '/rest/v1/skill_runs?ip_id=eq.' + encodeURIComponent(ip.id) +
+      '&select=member_id,skill_id,status,updated_at,responses&order=updated_at.desc&limit=80',
+      { headers: MXIPAuth.authHeaders() });
+    if(r.ok) runs = await r.json();
+  }catch(e){}
+  const seen = new Set(); const roles = []; let covSum = 0, totSum = 0;
+  for(const run of runs){
+    const sid = run.skill_id || ''; if(seen.has(sid)) continue; seen.add(sid);
+    const roleId = parseInt((sid.split('#')[1] || '').trim(), 10);
+    const rd = roleById(roleId);
+    const cov = (run.responses && run.responses.__coverage) || [];
+    const covered = cov.filter(c => c && c.status === 'covered').length;
+    const partial = cov.filter(c => c && c.status === 'partial').length;
+    const total = cov.length;
+    const pct = total ? Math.round((covered + 0.5*partial)/total*100) : 0;
+    covSum += covered + 0.5*partial; totSum += total;
+    const delivered = cov.filter(c => c && (c.status==='covered'||c.status==='partial'))
+      .map(c => (c.name||'') + (c.status==='partial' ? '（部分）' : ''));
+    const chat = (run.responses && run.responses.__chat) || [];
+    let excerpt = '';
+    for(let i=chat.length-1;i>=0;i--){ if(chat[i] && chat[i].role==='assistant'){ excerpt = String(chat[i].content||'').slice(0,500); break; } }
+    roles.push({ role: rd ? rd.name : ('角色#'+(roleId||'?')), phase: rd ? phaseZh(rd.phase) : '',
+      coverage_pct: pct, status: run.status || '', delivered, excerpt });
+  }
+  const ipPct = totSum ? Math.round(covSum/totSum*100) : 0;
+  return { ip_id: ip.id, ip_name: ip.name, pct: ipPct, roles };
+}
+
+// ── 生成開會包 ──
+async function generate(){
+  setBusy(true); setMsg('讀取本週各 IP 交付中…');
+  const material = [];
+  for(const ip of IPS){ material.push(await gatherIP(ip)); }
+  setMsg('AI 合成開會包中…（約 10-20 秒）');
+  let brief = null;
+  try{
+    const res = await fetch(CONSULT_URL, { method:'POST', headers: MXIPAuth.authHeaders(),
+      body: JSON.stringify({ action:'meeting-brief',
+        ips: material.map(m => ({ ip_id:m.ip_id, ip_name:m.ip_name, roles:m.roles })) }) });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){ setMsg('合成失敗：' + (data.error || res.status), true); setBusy(false); return; }
+    brief = data.brief;
+  }catch(e){ setMsg('合成失敗：' + e.message, true); setBusy(false); return; }
+  if(!brief || !Array.isArray(brief.ips)){ setMsg('AI 回傳格式異常，請再試一次。', true); setBusy(false); return; }
+
+  // 合併 brief（決策內容）與 material（涵蓋率/燈號），依 suggested_order 排序
+  const matById = {}; material.forEach(m => matById[m.ip_id] = m);
+  const briefById = {}; brief.ips.forEach(b => briefById[b.ip_id] = b);
+  const order = (Array.isArray(brief.suggested_order) && brief.suggested_order.length)
+    ? brief.suggested_order : IPS.map(i => i.id);
+  const seen = new Set(); const cards = [];
+  order.concat(IPS.map(i=>i.id)).forEach(id => {
+    if(seen.has(id) || !matById[id]) return; seen.add(id);
+    const m = matById[id], b = briefById[id] || {};
+    cards.push({ ip_id:id, ip_name:m.ip_name, pct:m.pct, light:lightOf(m.pct),
+      summary:b.summary||'', decisions:b.decisions||[], blockers:b.blockers||[],
+      needs:b.needs||[], highlights:b.highlights||[],
+      delivered: m.roles.flatMap(r => r.delivered.map(d => r.role+'：'+d)),
+      open:false });
+  });
+  STATE = { cards, cross: brief.cross_decisions||[], risks: brief.risks||[], week: isoWeek(new Date()) };
+  $('weekLbl').textContent = STATE.week + ' · 生成完成';
+  setMsg('生成完成。拖曳排序、折疊聚焦，滿意就「貼議程到 Slack」。');
+  $('slackBtn').disabled = false; $('mdBtn').disabled = false;
+  render(); setBusy(false);
+}
+
+// ── 渲染 ──
+function render(){
+  const area = $('area');
+  if(!STATE.cards.length){ area.innerHTML = '<div class="empty">沒有資料。</div>'; return; }
+  let h = '';
+  STATE.cards.forEach((c, idx) => {
+    const topDec = c.decisions[0] ? ('⚡ '+esc(c.decisions[0])) : (c.pct<30 ? '⚡ 本週無人動' : '');
+    h += '<div class="card'+(c.open?' open':'')+'" draggable="true" data-i="'+idx+'">'
+      + '<div class="chead" data-toggle="'+idx+'">'
+        + '<span class="grip" title="拖曳排序">⠿</span>'
+        + '<span class="light">'+c.light+'</span>'
+        + '<span class="cname">'+esc(c.ip_name)+'</span>'
+        + '<span class="cmeta">交付 '+c.delivered.length+' · 涵蓋 '+c.pct+'%</span>'
+        + '<span class="ctop">'+topDec+'</span>'
+        + '<span class="caret">▶</span>'
+      + '</div>'
+      + '<div class="cbody">'
+        + (c.summary ? '<div class="blk"><h4>本週狀態</h4><div style="font-size:14px">'+esc(c.summary)+'</div></div>' : '')
+        + blkList('⚡ 要當場決定', c.decisions, 'decision')
+        + blkList('🚧 卡點', c.blockers, 'blocker')
+        + (c.needs.length ? '<div class="blk"><h4>👤 需要誰</h4><div>'+c.needs.map(x=>'<span class="pill">'+esc(x)+'</span>').join('')+'</div></div>' : '')
+        + blkList('✨ 亮點', c.highlights, '')
+        + (c.delivered.length ? '<div class="blk"><h4>本週交付（'+c.delivered.length+'）</h4><div>'+c.delivered.map(x=>'<span class="pill">'+esc(x)+'</span>').join('')+'</div></div>' : '')
+      + '</div>'
+    + '</div>';
+  });
+  // 跨 IP 決策 + 風險
+  if(STATE.cross.length) h += '<div class="section cross"><h3>③ 跨 IP 決策清單（散會前 close）</h3><ul>'+STATE.cross.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+  if(STATE.risks.length) h += '<div class="section risk"><h3>④ 風險 / 卡點升級</h3><ul>'+STATE.risks.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+  area.innerHTML = h;
+  wireCards();
+}
+function blkList(title, arr, cls){
+  if(!arr || !arr.length) return '';
+  return '<div class="blk '+cls+'"><h4>'+title+'</h4><ul>'+arr.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+}
+
+// ── 折疊 + 拖曳 ──
+let dragFrom = null;
+function wireCards(){
+  document.querySelectorAll('.chead[data-toggle]').forEach(el => {
+    el.addEventListener('click', e => {
+      if(e.target.classList.contains('grip')) return;
+      const i = +el.getAttribute('data-toggle'); STATE.cards[i].open = !STATE.cards[i].open;
+      el.parentElement.classList.toggle('open', STATE.cards[i].open);
+    });
+  });
+  document.querySelectorAll('.card[draggable]').forEach(card => {
+    card.addEventListener('dragstart', e => { dragFrom = +card.getAttribute('data-i'); card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    card.addEventListener('dragend', () => { dragFrom=null; document.querySelectorAll('.card').forEach(c=>c.classList.remove('dragging','dragover')); });
+    card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); });
+    card.addEventListener('dragleave', () => card.classList.remove('dragover'));
+    card.addEventListener('drop', e => {
+      e.preventDefault(); const to = +card.getAttribute('data-i');
+      if(dragFrom===null || dragFrom===to) return;
+      const [m] = STATE.cards.splice(dragFrom,1); STATE.cards.splice(to,0,m); render();
+    });
+  });
+}
+
+// ── 組議程文字（Slack mrkdwn / Markdown）──
+function buildAgenda(forSlack){
+  const B = forSlack ? '*' : '**';  // Slack 單星粗體
+  const L = [];
+  L.push((forSlack?'*':'# ')+'📋 本週設計會議 · 開會包'+(forSlack?'*':'')+'（'+STATE.week+'）');
+  L.push('依序討論，標 ⚡ 的當場拍板。');
+  L.push('');
+  // ① 速覽
+  L.push(B+'① 速覽'+B);
+  STATE.cards.forEach((c,i) => L.push((i+1)+'. '+c.light+' '+c.ip_name+'（涵蓋 '+c.pct+'%）'+(c.decisions[0]?' — ⚡'+c.decisions[0]:'')));
+  L.push('');
+  // ② 逐 IP
+  L.push(B+'② 逐 IP'+B);
+  STATE.cards.forEach((c,i) => {
+    L.push('');
+    L.push(B+(i+1)+'. '+c.light+' '+c.ip_name+B+(c.summary?' — '+c.summary:''));
+    if(c.decisions.length) L.push('   ⚡ 要決定：'+c.decisions.join('；'));
+    if(c.blockers.length)  L.push('   🚧 卡點：'+c.blockers.join('；'));
+    if(c.needs.length)     L.push('   👤 需要：'+c.needs.join('、'));
+  });
+  // ③ 跨 IP
+  if(STATE.cross.length){ L.push(''); L.push(B+'③ 跨 IP 決策清單'+B); STATE.cross.forEach(x=>L.push('• '+x)); }
+  if(STATE.risks.length){ L.push(''); L.push(B+'④ 風險升級'+B); STATE.risks.forEach(x=>L.push('• '+x)); }
+  return L.join('\n');
+}
+
+async function postSlack(){
+  if(!confirm('確定把目前排序的議程貼到 Slack #mx-ip-通知？')) return;
+  $('slackBtn').disabled = true; setMsg('貼到 Slack 中…');
+  try{
+    const res = await fetch(CONSULT_URL, { method:'POST', headers: MXIPAuth.authHeaders(),
+      body: JSON.stringify({ action:'post-agenda', text: buildAgenda(true) }) });
+    const data = await res.json().catch(()=>({}));
+    if(data.ok) setMsg('✅ 議程已貼到 Slack #mx-ip-通知。');
+    else setMsg('Slack 貼出失敗：' + (data.error || data.skip || '未知'), true);
+  }catch(e){ setMsg('Slack 貼出失敗：' + e.message, true); }
+  $('slackBtn').disabled = false;
+}
+function exportMd(){
+  const blob = new Blob([buildAgenda(false)], {type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '開會包_'+STATE.week+'.md'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function setMsg(t, err){ const m=$('msg'); m.textContent=t||''; m.className='msg'+(err?' err':''); }
+function setBusy(b){ $('genBtn').disabled=b; }
+
+$('genBtn').addEventListener('click', generate);
+$('slackBtn').addEventListener('click', postSlack);
+$('mdBtn').addEventListener('click', exportMd);
+
+// ── 啟動：限 admin / backend ──
+(window.MXIPAuth ? MXIPAuth.init() : Promise.resolve()).then(async () => {
+  if(window.MXIPAuth && !(await MXIPAuth.hasAnyRole(['admin','backend']))){
+    MXIPAuth.showForbidden('本週開會包僅限管理員與後台');
+    $('genBtn').disabled = true;
+  }
+});
+</script>
+</body>
+</html>

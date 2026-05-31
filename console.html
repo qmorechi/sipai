@@ -310,20 +310,23 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
   </div>
 
   <div class="tab-panel active" id="tab-roles">
-  <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <button id="navRoles" class="hubOpen" data-roles="1" data-title="👥 角色互動圖（唯讀）" style="background:#20242c;color:#fff4e3;border:1px solid rgba(255,255,255,.14);border-radius:9px;font-family:inherit;font-weight:800;font-size:13px;padding:9px 15px;cursor:pointer">👥 開啟角色互動圖（唯讀浮層）</button>
-    <span style="font-size:12px;color:#9ba7b5">這個 IP 的 22 角色互動節點圖 / 過載指標，疊在主控台上看、不換頁。</span>
-  </div>
   <section class="block">
     <h2>📊 進度</h2>
     <div class="progress-stats" id="progressStats"></div>
     <div class="progress-bar"><div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div></div>
   </section>
 
-  <section class="block">
-    <h2>⚠ 還沒人認領的角色</h2>
-    <div class="vacant-list" id="vacantList"></div>
-  </section>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-bottom:18px">
+    <section class="block" style="margin:0">
+      <h2>⚠ 還沒人認領的角色</h2>
+      <div class="vacant-list" id="vacantList"></div>
+    </section>
+    <section class="block" style="margin:0">
+      <h2>👥 角色互動圖（唯讀）</h2>
+      <p class="lead">這個 IP 的 22 角色互動節點圖 / 過載指標。角色定下來就很少動，疊在主控台上看、不換頁。</p>
+      <button id="navRoles" class="hubOpen" data-roles="1" data-title="👥 角色互動圖（唯讀）" style="background:#20242c;color:#fff4e3;border:1px solid rgba(255,255,255,.14);border-radius:9px;font-family:inherit;font-weight:800;font-size:13px;padding:9px 15px;cursor:pointer">🔗 開啟角色互動圖（浮層）</button>
+    </section>
+  </div>
 
   <section class="block">
     <h2>🎯 角色 × 成員矩陣</h2>

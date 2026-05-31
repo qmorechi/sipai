@@ -103,7 +103,7 @@ header.top .meta .auto-tag{background:rgba(197,164,107,.15);color:var(--accent-1
   <div class="meta">
     <span>本週區間 2026 / 05 / 18 – 05 / 24</span>
     <span class="auto-tag">⏳ AI 自動整理(規劃中)</span>
-    <span>最後更新 — 待 AI pipeline 上線</span>
+    <span id="syncHint" style="color:#6bc47a;font-weight:700">● 同步主控台狀態中…</span>
   </div>
 </header>
 
@@ -372,27 +372,48 @@ async function fillMeetingNotes() {
   });
 }
 
-// ── 開機：先把「上線/暫停」狀態同步成主控台 ip_projects 的即時值（之前是寫死，會跟主控台脫鉤）──
-async function syncActiveStatus() {
-  if (!window.MXIPAuth) return;
-  try { await MXIPAuth.init(); } catch (e) { return; }
+// ── 上線/暫停狀態：即時同步主控台 ip_projects（讀同一張表；切回分頁 / 每 15 秒自動重抓）──
+let _lastSync = null;
+function timeStr(d){ const p = n => String(n).padStart(2,'0'); return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); }
+function markSynced(ok){
+  const el = document.getElementById('syncHint'); if (!el) return;
+  if (ok === false) { el.style.color = '#f8d66d'; el.textContent = '● 暫時讀不到主控台狀態（顯示上次值）'; return; }
+  el.style.color = '#6bc47a';
+  el.textContent = _lastSync ? ('● 上線狀態即時同步自主控台 · ' + timeStr(_lastSync)) : '● 同步主控台狀態中…';
+}
+// 讀 ip_projects 覆寫各 IP 的 active；回傳「狀態是否有變」
+async function applyStatusFromDB(){
+  if (!window.MXIPAuth) return false;
+  try { await MXIPAuth.init(); } catch (e) { markSynced(false); return false; }
   try {
     const r = await fetch(MXIPAuth.SB_URL + '/rest/v1/ip_projects?select=codename,status', { headers: MXIPAuth.authHeaders() });
-    if (!r.ok) return;
+    if (!r.ok) { markSynced(false); return false; }
     const rows = await r.json();
     const byCode = {}; rows.forEach(x => { if (x && x.codename) byCode[x.codename] = x.status; });
     let changed = false;
-    IPS.forEach(ip => {
-      const st = byCode[ip.rolesIp];            // ip_projects.codename = progress 的 rolesIp（SIPAI…）
+    IPS.forEach(ip => {                          // ip_projects.codename = progress 的 rolesIp（SIPAI…）
+      const st = byCode[ip.rolesIp];
       if (st) { const a = (st === 'active'); if (a !== ip.active) { ip.active = a; changed = true; } }
     });
-    if (changed) { renderContent(); }            // 狀態跟寫死值不同 → 用即時值重畫卡片
-  } catch (e) { /* 讀不到就保留靜態預設 */ }
+    _lastSync = new Date(); markSynced(true);
+    return changed;
+  } catch (e) { markSynced(false); return false; }
 }
-async function boot() {
-  await syncActiveStatus();   // 先對齊上線/暫停
-  await loadProgress();       // 再填完成度條（只填上線中的）
-  await fillMeetingNotes();   // 再填會後回填三欄
+function fillAll(){ loadProgress(); fillMeetingNotes(); }
+// 即時 tick：分頁隱藏時不打擾；狀態真的變了才重畫+重填
+async function liveTick(){
+  if (document.visibilityState === 'hidden') return;
+  const changed = await applyStatusFromDB();
+  if (changed) { renderContent(); fillAll(); }
+}
+async function boot(){
+  await applyStatusFromDB();   // 先對齊上線/暫停
+  renderContent();             // 用即時狀態畫卡片
+  fillAll();                   // 完成度條 + 會後回填三欄
+  // 即時連動：切回此分頁 / 視窗 focus / 每 15 秒，自動重抓主控台狀態
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') liveTick(); });
+  window.addEventListener('focus', liveTick);
+  setInterval(liveTick, 15000);
 }
 boot();
 </script>

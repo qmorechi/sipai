@@ -117,11 +117,13 @@ async function gatherIP(ip){
     const delivered = cov.filter(c => c && (c.status==='covered'||c.status==='partial'))
       .map(c => (c.name||'') + (c.status==='partial' ? '（部分）' : ''));
     const chat = (run.responses && run.responses.__chat) || [];
-    let excerpt = '';
-    for(let i=chat.length-1;i>=0;i--){ if(chat[i] && chat[i].role==='assistant'){ excerpt = String(chat[i].content||'').slice(0,500); break; } }
+    let lastA = '';
+    for(let i=chat.length-1;i>=0;i--){ if(chat[i] && chat[i].role==='assistant'){ lastA = String(chat[i].content||''); break; } }
+    const excerpt = lastA.slice(0,400);   // 給 AI（精簡）
+    const content = lastA.slice(0,1800);  // 給展開看（較完整，不送 AI）
     const wk = run.updated_at ? (isoWeek(new Date(run.updated_at)) === isoWeek(new Date())) : false;
     roles.push({ role: rd ? rd.name : ('角色#'+(roleId||'?')), roleId: roleId || 0, phase: rd ? phaseZh(rd.phase) : '',
-      member: run.member_id || '', coverage_pct: pct, status: run.status || '', delivered, excerpt, wk });
+      member: run.member_id || '', coverage_pct: pct, status: run.status || '', delivered, excerpt, content, wk });
   }
   const ipPct = totSum ? Math.round(covSum/totSum*100) : 0;
   return { ip_id: ip.id, ip_name: ip.name, pct: ipPct, roles };
@@ -139,7 +141,8 @@ async function generate(){
   try{
     const res = await fetch(CONSULT_URL, { method:'POST', headers: MXIPAuth.authHeaders(),
       body: JSON.stringify({ action:'meeting-brief',
-        ips: material.map(m => ({ ip_id:m.ip_id, ip_name:m.ip_name, roles:m.roles })) }) });
+        ips: material.map(m => ({ ip_id:m.ip_id, ip_name:m.ip_name,
+          roles: (m.roles||[]).map(r => ({ role:r.role, phase:r.phase, coverage_pct:r.coverage_pct, status:r.status, delivered:r.delivered, excerpt:r.excerpt })) })) }) });
     const data = await res.json().catch(()=>({}));
     if(!res.ok){ setMsg('合成失敗：' + (data.error || res.status), true); setBusy(false); return; }
     brief = data.brief;
@@ -168,7 +171,7 @@ async function generate(){
   material.forEach(m => (m.roles||[]).forEach(r => {
     if(!r.delivered || !r.delivered.length) return;
     const g = groupOf(r.roleId); if(!g || !proposals[g]) return;
-    proposals[g].push({ ip:m.ip_name, role:r.role, member:r.member, delivered:r.delivered, excerpt:r.excerpt, wk:r.wk });
+    proposals[g].push({ ip:m.ip_name, role:r.role, member:r.member, delivered:r.delivered, content:r.content, wk:r.wk });
   }));
   groupsOrder.forEach(g => proposals[g].sort((a,b)=> (b.wk?1:0)-(a.wk?1:0)));  // 本週優先
 
@@ -216,18 +219,29 @@ function render(){
       const items = STATE.proposals[g] || [];
       h += '<div style="margin-top:12px"><div style="font-weight:800;font-size:14px;color:var(--gold);margin-bottom:4px">'+esc(phaseZh(g))+'（'+items.length+'）</div>';
       if(!items.length) h += '<div style="font-size:13px;color:var(--dim);padding-left:4px">本週無新提案</div>';
-      else { h += '<ul style="margin:0;padding-left:18px">';
-        items.forEach(it => { h += '<li style="margin:4px 0;font-size:13.5px">'
-          + (it.wk ? '<span style="color:var(--green);font-weight:700">● 本週 </span>' : '')
-          + '<b>'+esc(it.ip)+'</b> · '+esc(it.role)+(it.member?' · '+esc(it.member):'')
-          + '<span style="color:var(--dim)">　'+esc((it.delivered||[]).join('、'))+'</span></li>'; });
-        h += '</ul>'; }
+      else items.forEach(it => {
+        h += '<div class="prop">'
+          + '<div class="prop-head" style="cursor:pointer;font-size:13.5px;margin:5px 0;padding-left:2px">'
+            + (it.wk ? '<span style="color:var(--green);font-weight:700">● 本週 </span>' : '')
+            + '<b>'+esc(it.ip)+'</b> · '+esc(it.role)+(it.member?' · '+esc(it.member):'')
+            + '<span style="color:var(--dim)">　'+esc((it.delivered||[]).join('、'))+'</span>'
+            + (it.content ? ' <span class="propCaret" style="color:var(--gold);font-size:11px">▸ 看內容</span>' : '<span style="color:var(--dim);font-size:11px">　（無草稿）</span>')
+          + '</div>'
+          + (it.content ? '<div class="prop-body" style="display:none;white-space:pre-wrap;font-size:12.5px;line-height:1.55;color:#d8d0c0;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:0 0 8px;max-height:300px;overflow:auto">'+esc(it.content)+'</div>' : '')
+        + '</div>';
+      });
       h += '</div>';
     });
     h += '</div>';
   }
   area.innerHTML = h;
   wireCards();
+  document.querySelectorAll('.prop-head').forEach(hd => hd.addEventListener('click', () => {
+    const body = hd.parentElement.querySelector('.prop-body'); if(!body) return;
+    const open = body.style.display === 'none';
+    body.style.display = open ? 'block' : 'none';
+    const caret = hd.querySelector('.propCaret'); if(caret) caret.textContent = open ? '▾ 收合' : '▸ 看內容';
+  }));
 }
 function blkList(title, arr, cls){
   if(!arr || !arr.length) return '';

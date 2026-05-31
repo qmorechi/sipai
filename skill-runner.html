@@ -46,6 +46,18 @@
   .pbar-top b { color:var(--ok); font-size:16px; }
   .pbar { height:10px; background:#0e0e10; border-radius:6px; overflow:hidden; }
   .pbar > i { display:block; height:100%; background:var(--ok); transition:width .3s; }
+  /* C：我的待辦面板 */
+  .todos { border:1px solid var(--gold); border-radius:12px; background:rgba(197,164,107,.07); padding:12px 15px; margin-bottom:14px; }
+  .todos-h { font-size:13.5px; font-weight:800; color:var(--gold); margin-bottom:8px; }
+  .todos-sub { font-size:11px; font-weight:400; color:var(--dim); margin-left:8px; }
+  .todo { display:flex; align-items:center; gap:9px; padding:7px 6px; border-top:1px solid var(--line); cursor:pointer; font-size:13.5px; }
+  .todo:first-of-type { border-top:none; }
+  .todo input { width:16px; height:16px; accent-color:var(--gold); cursor:pointer; flex:0 0 auto; }
+  .todo .tpri { flex:0 0 auto; font-size:12px; }
+  .todo .titem { flex:1; line-height:1.45; }
+  .todo .tdue { flex:0 0 auto; font-size:11px; color:var(--dim); background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 7px; }
+  .todo-doing { opacity:.6; }
+  .todo-done .titem { text-decoration:line-through; color:var(--dim); }
   .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px; }
   .tile { border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:14px 16px;
           cursor:pointer; transition:border-color .15s, transform .1s; display:flex; flex-direction:column; }
@@ -177,8 +189,10 @@
 // 對話存 skill_runs.responses.__chat（skill_id = skill#roleId，每角色一份）。
 
 const CONSULT_SLUG = 'hyper-processor';
+const DRIVE_SLUG = 'drive-read';   // ⚠️ 部署後若 Supabase 自動改 slug，改這裡
 const SB = (window.MXIPAuth && MXIPAuth.SB_URL) || '';
 const CONSULT_URL = SB + '/functions/v1/' + CONSULT_SLUG;
+const DRIVE_URL = SB + '/functions/v1/' + DRIVE_SLUG;
 const KICKOFF = '請開始。依我這個「指定角色」的職責，用顧問的方式一步步帶我產出我這塊的 deliverable：先用一兩句說明你是我的什麼角色顧問、會怎麼帶我，然後直接問我第一個、最該先決定的問題。一次只問一件事。';
 const LBL = { todo:'未開始', doing:'進行中', review:'送審', done:'完成' };
 
@@ -264,7 +278,7 @@ async function renderHome(){
     +'<div class="pbar-wrap"><div class="pbar-top"><span>'+(T.isAdmin?'全部角色':'我的協作角色')+'　實質完成度（交付項覆蓋率）</span><span><b>'+pct+'%</b>　完成角色 '+done+' / '+ids.length+'</span></div><div class="pbar"><i style="width:'+pct+'%"></i></div></div>'
     + '<button id="digestBtn">📋 本週成果</button>'
     + (T.isAdmin?'<button id="teamBtn">📊 全 IP 進度表</button>':'')
-    + '</div><div class="tiles">'
+    + '</div><div id="myTodos"></div><div class="tiles">'
     + ids.map(id=>{ const r=roleById(id); if(!r) return ''; const c=cmap[id]; const sk=ROLE_SKILL[id];
         const tp=c.total?Math.round((c.covered+0.5*c.partial)/c.total*100):0;
         return '<div class="tile" data-id="'+id+'"><div class="rn">'+pad2(id)+'　'+esc(SKILL_FLOWS[sk].label)+'</div>'
@@ -278,6 +292,32 @@ async function renderHome(){
   if($('teamBtn')) $('teamBtn').onclick=()=>renderTeamTable();
   if($('digestBtn')) $('digestBtn').onclick=()=>renderWeeklyDigest();
   fillGallery('homeGallery', true);
+  loadMyTodos();
+}
+
+// ── C：上次會議回灌給「我」的待辦（勾選 → 標完成）──
+async function loadMyTodos(){
+  const el=$('myTodos'); if(!el) return;
+  const me=memberId(); if(!me){ el.innerHTML=''; return; }
+  let rows=[];
+  try{ const r=await fetch(SB+'/rest/v1/meeting_todos?owner_member_id=eq.'+encodeURIComponent(me)+'&done=eq.false&select=id,item,due,priority,week&order=created_at.desc',{headers:MXIPAuth.authHeaders()}); if(r.ok) rows=await r.json(); }catch(e){ el.innerHTML=''; return; }
+  if(!rows.length){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="todos"><div class="todos-h">📋 上次會議給你的待辦（'+rows.length+'）<span class="todos-sub">勾起來＝完成，會記錄起來</span></div>'
+    + rows.map(t=>'<label class="todo" data-id="'+esc(t.id)+'"><input type="checkbox">'
+        +(t.priority?'<span class="tpri">'+esc(t.priority)+'</span>':'')
+        +'<span class="titem">'+esc(t.item)+'</span>'
+        +(t.due?'<span class="tdue">'+esc(t.due)+'</span>':'')+'</label>').join('')
+    + '</div>';
+  el.querySelectorAll('.todo input').forEach(cb=>cb.addEventListener('change', async e=>{
+    const lab=e.target.closest('.todo'); const id=lab.getAttribute('data-id');
+    e.target.disabled=true; lab.classList.add('todo-doing');
+    try{
+      const r=await fetch(SB+'/rest/v1/meeting_todos?id=eq.'+encodeURIComponent(id),{method:'PATCH',
+        headers:MXIPAuth.authHeaders({Prefer:'return=minimal'}),body:JSON.stringify({done:true,done_at:new Date().toISOString()})});
+      if(r.ok){ lab.classList.remove('todo-doing'); lab.classList.add('todo-done'); setTimeout(()=>loadMyTodos(),700); }
+      else { e.target.disabled=false; e.target.checked=false; lab.classList.remove('todo-doing'); }
+    }catch(_){ e.target.disabled=false; e.target.checked=false; lab.classList.remove('todo-doing'); }
+  }));
 }
 
 // ── 參考圖（嵌首頁下方 + 對談右欄；以週切換瀏覽，邊看邊協作）──
@@ -551,6 +591,7 @@ function renderChat(){
         +T.pendingDocs.map((d,i)=>'<div class="doc-chip">📄 '+esc(d.name)+'<button data-rmd="'+i+'" title="移除">×</button></div>').join('')
       +'</div>':'')
     +'<div class="composer"><label class="attach-btn" title="上傳參考圖 / 手稿 / 影片 / PDF（影片自動抽影格、PDF 直接給 AI 讀）">📎<input type="file" id="fileInput" accept="image/*,video/*,application/pdf" multiple hidden></label>'
+    +'<button class="attach-btn" id="docBtn" type="button" title="從 Google Doc / Drive 匯入文字當素材">📄</button>'
     +'<textarea id="input" placeholder="輸入你的回覆，或上傳參考圖/手稿讓 AI 看（Enter 送出）"'+(T.busy?' disabled':'')+'></textarea>'
     +'<button class="primary" id="sendBtn"'+(T.busy?' disabled':'')+'>送出</button></div>'
     +'<div class="toolbar"><button id="deliverBtn"'+(T.busy?' disabled':'')+'>🧩 彙整成正式提案（依 skill 規格）</button>'
@@ -565,6 +606,20 @@ function scrollMsgs(){ const m=$('msgs'); if(m) m.scrollTop=m.scrollHeight; }
 function wire(){
   if($('backBtn')) $('backBtn').onclick=()=>{ if(!T.busy) renderHome(); };
   if($('fileInput')) $('fileInput').onchange=(e)=>{ addFiles(e.target.files); e.target.value=''; };
+  if($('docBtn')) $('docBtn').onclick=async ()=>{
+    const u=(prompt('貼上 Google Doc / Drive 連結，把裡面的文字讀進來當素材：')||'').trim();
+    if(!u) return;
+    if(!/^https?:\/\//i.test(u) && !/^[a-zA-Z0-9_-]{20,}$/.test(u)){ alert('請貼有效的 Google Doc / Drive 連結'); return; }
+    const inp=$('input'); const old=inp?inp.placeholder:''; const btn=$('docBtn');
+    if(btn) btn.textContent='⏳'; if(inp){ inp.disabled=true; inp.placeholder='從 Google Drive 讀取中…'; }
+    try{
+      const res=await fetch(DRIVE_URL,{method:'POST',headers:MXIPAuth.authHeaders(),body:JSON.stringify({url:u})});
+      const d=await res.json().catch(()=>({}));
+      if(!res.ok){ alert('讀取失敗：'+(d.error||res.status)); }
+      else if(inp){ const t=(d.title?'【'+d.title+'】\n':'')+(d.text||''); inp.value=inp.value?(inp.value+'\n\n'+t):t; }
+    }catch(e){ alert('讀取失敗：'+e.message); }
+    if(btn) btn.textContent='📄'; if(inp){ inp.disabled=false; inp.placeholder=old; inp.focus(); }
+  };
   document.querySelectorAll('[data-rm]').forEach(b=>{ b.onclick=()=>{ T.pending.splice(+b.dataset.rm,1); renderChat(); }; });
   document.querySelectorAll('[data-rmd]').forEach(b=>{ b.onclick=()=>{ T.pendingDocs.splice(+b.dataset.rmd,1); renderChat(); }; });
   if($('addLinkBtn')) $('addLinkBtn').onclick=()=>{

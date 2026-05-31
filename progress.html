@@ -226,16 +226,16 @@ function ipCardHTML(ip, detail=false) {
   const fullSections = `
     <div class="section">
       <div class="section-title"><span class="icon">📈</span>本週進度</div>
-      <div class="section-content"><p class="empty">${ip.active ? '等 AI 從 ' + ip.channels + ' 整理' : ip.progress}</p></div>
+      <div class="section-content" id="prog-${ip.id}"><p class="empty">${ip.active ? '等會後整理回填（從會議結論帶入）' : ip.progress}</p></div>
     </div>
     ${ip.active ? `
     <div class="section">
       <div class="section-title"><span class="icon">⚠</span>待解問題</div>
-      <div class="section-content"><p class="empty">—</p></div>
+      <div class="section-content" id="issue-${ip.id}"><p class="empty">—</p></div>
     </div>
     <div class="section">
       <div class="section-title"><span class="icon">🎯</span>下週重點</div>
-      <div class="section-content"><p class="empty">—</p></div>
+      <div class="section-content" id="focus-${ip.id}"><p class="empty">—</p></div>
     </div>` : ''}
   `;
 
@@ -336,6 +336,40 @@ async function loadProgress() {
   }
 }
 loadProgress();
+
+// ── 會後結論回填：把最新一場會議的 per-IP 摘要填進三欄 ──
+function escMN(s){ return String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+async function fillMeetingNotes() {
+  if (!window.MXIPAuth) return;
+  try { await MXIPAuth.init(); } catch (e) { return; }
+  const SB = MXIPAuth.SB_URL;
+  let rows = [];
+  try {
+    const r = await fetch(SB + '/rest/v1/meeting_notes?select=ip_updates,meeting_date&order=created_at.desc&limit=1', { headers: MXIPAuth.authHeaders() });
+    if (r.ok) rows = await r.json();
+  } catch (e) { return; }
+  if (!rows.length) return;
+  const ups = Array.isArray(rows[0].ip_updates) ? rows[0].ip_updates : [];
+  const when = rows[0].meeting_date || '';
+  const byId = {}; ups.forEach(u => { if (u && u.ip_id) byId[u.ip_id] = u; });
+  IPS.forEach(ip => {
+    if (!ip.active) return;
+    const u = byId[ip.rolesIp]; if (!u) return;
+    const set = (pre, val) => {
+      const el = document.getElementById(pre + '-' + ip.id);
+      if (el && val && val !== '—') el.innerHTML = '<p>' + escMN(val) + '</p>';
+    };
+    set('prog', u.progress); set('issue', u.issues); set('focus', u.focus);
+    // footer「本週訊息」改顯示最近回填日期
+    if (when) {
+      const card = el => el && el.closest('.ip');
+      const c = card(document.getElementById('prog-' + ip.id));
+      const meta = c && c.querySelector('.footer-meta span:last-child');
+      if (meta) meta.textContent = '會後更新 ' + when;
+    }
+  });
+}
+fillMeetingNotes();
 </script>
 </body>
 </html>

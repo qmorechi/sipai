@@ -146,6 +146,20 @@ ul.card-list li strong{color:var(--text);font-weight:500;}
   .myao-panel.g4{grid-template-columns:1fr 1fr;}
   .myao-panel.g3{grid-template-columns:1fr 1fr;}
 }
+/* 會後整理節點（自動接在精修 #001-#006 後，樣式獨立）*/
+.mn-body{font-size:14px;line-height:1.7;color:var(--text);max-width:760px;}
+.mn-body h1{font-size:18px;font-weight:700;margin:22px 0 8px;color:var(--accent-1);border-bottom:1px solid var(--border);padding-bottom:6px;}
+.mn-body h2{font-size:15px;font-weight:500;margin:18px 0 6px;color:var(--accent-2);}
+.mn-body h3{font-size:13px;font-weight:500;margin:12px 0 4px;color:var(--accent-3);}
+.mn-body p{margin:6px 0;}
+.mn-body ul{margin:6px 0;padding-left:20px;}
+.mn-body li{margin:3px 0;}
+.mn-body hr{border:none;border-top:1px dashed var(--border);margin:16px 0;}
+.mn-body strong{color:var(--text);font-weight:500;}
+.mn-body table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;}
+.mn-body th,.mn-body td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top;}
+.mn-body th{background:var(--surface2);color:var(--accent-1);font-weight:500;}
+.mn-body code{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:.9em;}
 </style>
 </head>
 <body>
@@ -222,9 +236,71 @@ async function loadTimeline() {
     const rows = await res.json();
     wrap.innerHTML = (rows[0] && rows[0].html) || '<div id="tl-gate" style="padding:56px 28px;color:#9ba7b5">尚無內容。</div>';
     animateScores();
+    await appendMeetingNodes(wrap);
   } catch (e) {
     wrap.innerHTML = '<div id="tl-gate" style="padding:56px 28px;color:#ff8b73">載入失敗（' + e.message + '），請重新整理或重新登入。</div>';
   }
+}
+
+// ── 會後整理：把 meeting_notes 原生接成新時間節點（#007…），精修 #001-#006 不動 ──
+function escTL(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function mdToHtmlTL(md){
+  const lines = String(md).replace(/\r/g,'').split('\n');
+  const inl = s => escTL(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`(.+?)`/g,'<code>$1</code>');
+  let h = '', i = 0;
+  while(i < lines.length){
+    const ln = lines[i];
+    if(/^\s*\|.*\|\s*$/.test(ln) && i+1<lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i+1])){
+      const cell = r => r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      h += '<table><thead><tr>'+cell(ln).map(c=>'<th>'+inl(c)+'</th>').join('')+'</tr></thead><tbody>'; i += 2;
+      while(i<lines.length && /^\s*\|.*\|\s*$/.test(lines[i])){ h += '<tr>'+cell(lines[i]).map(c=>'<td>'+inl(c)+'</td>').join('')+'</tr>'; i++; }
+      h += '</tbody></table>'; continue;
+    }
+    if(/^\s*[-•]\s+/.test(ln)){ h += '<ul>'; while(i<lines.length && /^\s*[-•]\s+/.test(lines[i])){ h += '<li>'+inl(lines[i].replace(/^\s*[-•]\s+/,''))+'</li>'; i++; } h += '</ul>'; continue; }
+    if(/^###\s+/.test(ln)){ h += '<h3>'+inl(ln.replace(/^###\s+/,''))+'</h3>'; i++; continue; }
+    if(/^##\s+/.test(ln)){ h += '<h2>'+inl(ln.replace(/^##\s+/,''))+'</h2>'; i++; continue; }
+    if(/^#\s+/.test(ln)){ h += '<h1>'+inl(ln.replace(/^#\s+/,''))+'</h1>'; i++; continue; }
+    if(/^\s*---+\s*$/.test(ln)){ h += '<hr>'; i++; continue; }
+    if(ln.trim() === ''){ i++; continue; }
+    h += '<p>'+inl(ln)+'</p>'; i++;
+  }
+  return h;
+}
+async function appendMeetingNodes(wrap){
+  if(!(window.MXIPAuth && MXIPAuth.currentUser())) return;
+  let rows = [];
+  try{
+    const r = await fetch(`${MXIPAuth.SB_URL}/rest/v1/meeting_notes?select=title,meeting_date,phase,summary,conclusions_md&order=created_at.asc`, { headers: MXIPAuth.authHeaders() });
+    if(r.ok) rows = await r.json();
+  }catch(e){ return; }
+  if(!rows.length) return;
+  const nav = wrap.querySelector('.timeline-nav');
+  const firstSession = wrap.querySelector('.session');
+  if(!nav || !firstSession) return;
+  const main = firstSession.parentElement;
+  const base = wrap.querySelectorAll('.nav-item').length;   // 精修節點數（6）
+  const pcls = p => ({'問題期':'phase-1','提案期':'phase-2','驗證期':'phase-3','量產期':'phase-4'}[p] || 'phase-4');
+  rows.forEach((row, i) => {
+    const N = base + i + 1;
+    const num = '#' + String(N).padStart(3,'0');
+    const pc = pcls(row.phase);
+    const title = escTL(row.title || '會後整理');
+    const date = escTL(row.meeting_date || '');
+    const nv = document.createElement('div');
+    nv.className = 'nav-item ' + pc;
+    nv.setAttribute('onclick', "show('s" + N + "')");
+    nv.innerHTML = '<div class="nav-date">'+date+'</div><div class="nav-title">'+title+'</div><div class="nav-tag">'+num+' · '+escTL(row.phase||'')+'</div>';
+    nav.appendChild(nv);
+    const sec = document.createElement('div');
+    sec.className = 'session ' + pc;
+    sec.id = 's' + N;
+    sec.innerHTML = '<div class="session-header"><div class="session-number">'+num+'</div>'
+      + '<div class="session-meta"><div class="session-date">'+date+' · 會後整理</div>'
+      + '<div class="session-title">'+title+'</div>'
+      + '<div class="session-subtitle">'+escTL(row.summary||'')+'</div></div></div>'
+      + '<div class="mn-body">'+mdToHtmlTL(row.conclusions_md||'')+'</div>';
+    main.appendChild(sec);
+  });
 }
 
 (window.MXIPAuth ? MXIPAuth.init({ gate: true }) : Promise.resolve()).then(loadTimeline);

@@ -127,6 +127,7 @@ const IPS = [
     name: 'SIPAI 生意興龍',
     codename: 'SIPAI · S+',
     tier: '★ 主線',
+    tier2: '主線',
     tierClass: 'active',
     color: 'var(--accent-1)',
     lead: '失敗不算什麼,我們繼續走。六角色互動,內容說不完(Ray)',
@@ -138,6 +139,7 @@ const IPS = [
     name: 'City Monsters 阿灰',
     codename: 'CityMonsters · A-',
     tier: '第二主線',
+    tier2: '第二主線',
     tierClass: 'active',
     color: 'var(--accent-2)',
     lead: '在最擠的地方,找最舒服的姿勢。夾縫中的生存智慧(Kevin · Ray)',
@@ -149,6 +151,7 @@ const IPS = [
     name: '全知療癒貓 / 不倒翁',
     codename: 'HealingCat · B+',
     tier: '物件型 IP',
+    tier2: '物件型 IP',
     tierClass: 'active',
     color: 'var(--accent-4)',
     lead: '祂什麼都知道,但祂選擇陪你假裝不知道(Alice · 不倒翁概念試做 Maruo)',
@@ -246,8 +249,8 @@ function ipCardHTML(ip, detail=false) {
   return `<${tag} class="ip" ${href} style="--c:${ip.color}${opacity}">
     <div class="head">
       <span class="name">${ip.name}</span>
-      <span class="codename">${ip.codename}</span>
-      <span class="status-pill ${ip.tierClass}">${ip.tier}</span>
+      <span class="codename">${ip.codename}${ip.tier2 ? ' · ' + ip.tier2 : ''}</span>
+      <span class="status-pill ${ip.active ? 'active' : 'temp'}">${ip.active ? '● 上線中' : '● 暫停'}</span>
     </div>
     <div class="lead">${ip.lead}</div>
     ${ip.active ? `<div class="ipbar" id="ipbar-${ip.id}"></div>` : ''}

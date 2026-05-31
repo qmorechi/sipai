@@ -89,6 +89,8 @@ let STATE = { cards: [], cross: [], risks: [], week: '' };
 
 function roleById(id){ return (ROLE_DATA.roles||[]).find(r => r.id === id) || null; }
 function phaseZh(ph){ return (ROLE_DATA.phaseMeta && ROLE_DATA.phaseMeta[ph] && ROLE_DATA.phaseMeta[ph].zh) || ph || ''; }
+// roleId → 四大流程組（roles-data 的 groups），回傳組 key（= phaseMeta 的 key）
+function groupOf(roleId){ for(const g of (ROLE_DATA.groups||[])){ if(Array.isArray(g[1]) && g[1].indexOf(roleId) !== -1) return g[0]; } return null; }
 function lightOf(pct){ return pct >= 60 ? '🟢' : pct >= 30 ? '🟡' : '🔴'; }
 function isoWeek(d){ const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=x.getUTCDay()||7; x.setUTCDate(x.getUTCDate()+4-day); const ys=new Date(Date.UTC(x.getUTCFullYear(),0,1)); return x.getUTCFullYear()+'-W'+String(Math.ceil((((x-ys)/86400000)+1)/7)).padStart(2,'0'); }
 
@@ -117,8 +119,9 @@ async function gatherIP(ip){
     const chat = (run.responses && run.responses.__chat) || [];
     let excerpt = '';
     for(let i=chat.length-1;i>=0;i--){ if(chat[i] && chat[i].role==='assistant'){ excerpt = String(chat[i].content||'').slice(0,500); break; } }
-    roles.push({ role: rd ? rd.name : ('角色#'+(roleId||'?')), phase: rd ? phaseZh(rd.phase) : '',
-      coverage_pct: pct, status: run.status || '', delivered, excerpt });
+    const wk = run.updated_at ? (isoWeek(new Date(run.updated_at)) === isoWeek(new Date())) : false;
+    roles.push({ role: rd ? rd.name : ('角色#'+(roleId||'?')), roleId: roleId || 0, phase: rd ? phaseZh(rd.phase) : '',
+      member: run.member_id || '', coverage_pct: pct, status: run.status || '', delivered, excerpt, wk });
   }
   const ipPct = totSum ? Math.round(covSum/totSum*100) : 0;
   return { ip_id: ip.id, ip_name: ip.name, pct: ipPct, roles };
@@ -159,7 +162,18 @@ async function generate(){
       delivered: m.roles.flatMap(r => r.delivered.map(d => r.role+'：'+d)),
       open:false });
   });
-  STATE = { cards, cross: brief.cross_decisions||[], risks: brief.risks||[], week: isoWeek(new Date()) };
+  // 四大流程·本週提案（小組報告）：把各 IP 各角色的交付，按 roles-data 四大組彙整
+  const groupsOrder = (ROLE_DATA.groups||[]).map(g => g[0]);
+  const proposals = {}; groupsOrder.forEach(g => proposals[g] = []);
+  material.forEach(m => (m.roles||[]).forEach(r => {
+    if(!r.delivered || !r.delivered.length) return;
+    const g = groupOf(r.roleId); if(!g || !proposals[g]) return;
+    proposals[g].push({ ip:m.ip_name, role:r.role, member:r.member, delivered:r.delivered, excerpt:r.excerpt, wk:r.wk });
+  }));
+  groupsOrder.forEach(g => proposals[g].sort((a,b)=> (b.wk?1:0)-(a.wk?1:0)));  // 本週優先
+
+  STATE = { cards, cross: brief.cross_decisions||[], risks: brief.risks||[], week: isoWeek(new Date()),
+            proposals, groupsOrder };
   $('weekLbl').textContent = STATE.week + ' · 生成完成';
   setMsg('生成完成。拖曳排序、折疊聚焦，滿意就「貼議程到 Slack」。');
   $('slackBtn').disabled = false; $('mdBtn').disabled = false;
@@ -195,6 +209,23 @@ function render(){
   // 跨 IP 決策 + 風險
   if(STATE.cross.length) h += '<div class="section cross"><h3>③ 跨 IP 決策清單（散會前 close）</h3><ul>'+STATE.cross.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
   if(STATE.risks.length) h += '<div class="section risk"><h3>④ 風險 / 卡點升級</h3><ul>'+STATE.risks.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+  // ⑤ 四大流程·本週提案（小組報告）
+  if(STATE.groupsOrder && STATE.groupsOrder.length){
+    h += '<div class="section"><h3>⑤ 四大流程 · 本週提案（小組報告）</h3>';
+    STATE.groupsOrder.forEach(g => {
+      const items = STATE.proposals[g] || [];
+      h += '<div style="margin-top:12px"><div style="font-weight:800;font-size:14px;color:var(--gold);margin-bottom:4px">'+esc(phaseZh(g))+'（'+items.length+'）</div>';
+      if(!items.length) h += '<div style="font-size:13px;color:var(--dim);padding-left:4px">本週無新提案</div>';
+      else { h += '<ul style="margin:0;padding-left:18px">';
+        items.forEach(it => { h += '<li style="margin:4px 0;font-size:13.5px">'
+          + (it.wk ? '<span style="color:var(--green);font-weight:700">● 本週 </span>' : '')
+          + '<b>'+esc(it.ip)+'</b> · '+esc(it.role)+(it.member?' · '+esc(it.member):'')
+          + '<span style="color:var(--dim)">　'+esc((it.delivered||[]).join('、'))+'</span></li>'; });
+        h += '</ul>'; }
+      h += '</div>';
+    });
+    h += '</div>';
+  }
   area.innerHTML = h;
   wireCards();
 }
@@ -249,6 +280,16 @@ function buildAgenda(forSlack){
   // ③ 跨 IP
   if(STATE.cross.length){ L.push(''); L.push(B+'③ 跨 IP 決策清單'+B); STATE.cross.forEach(x=>L.push('• '+x)); }
   if(STATE.risks.length){ L.push(''); L.push(B+'④ 風險升級'+B); STATE.risks.forEach(x=>L.push('• '+x)); }
+  // ⑤ 四大流程·本週提案（小組報告）
+  if(STATE.groupsOrder && STATE.groupsOrder.length){
+    L.push(''); L.push(B+'⑤ 四大流程 · 本週提案（小組報告）'+B);
+    STATE.groupsOrder.forEach(g => {
+      const items = STATE.proposals[g] || [];
+      L.push(B+phaseZh(g)+'（'+items.length+'）'+B);
+      if(!items.length) L.push('• （本週無新提案）');
+      else items.forEach(it => L.push('• '+(it.wk?'●本週 ':'')+it.ip+' · '+it.role+(it.member?' · '+it.member:'')+'：'+(it.delivered||[]).join('、')));
+    });
+  }
   return L.join('\n');
 }
 

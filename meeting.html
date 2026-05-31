@@ -122,8 +122,9 @@ async function gatherIP(ip){
     const excerpt = lastA.slice(0,400);   // 給 AI（精簡）
     const content = lastA.slice(0,1800);  // 給展開看（較完整，不送 AI）
     const wk = run.updated_at ? (isoWeek(new Date(run.updated_at)) === isoWeek(new Date())) : false;
+    const lnks = (run.responses && Array.isArray(run.responses.__links)) ? run.responses.__links : [];
     roles.push({ role: rd ? rd.name : ('角色#'+(roleId||'?')), roleId: roleId || 0, phase: rd ? phaseZh(rd.phase) : '',
-      member: run.member_id || '', coverage_pct: pct, status: run.status || '', delivered, excerpt, content, wk });
+      member: run.member_id || '', coverage_pct: pct, status: run.status || '', delivered, excerpt, content, links: lnks, wk });
   }
   const ipPct = totSum ? Math.round(covSum/totSum*100) : 0;
   return { ip_id: ip.id, ip_name: ip.name, pct: ipPct, roles };
@@ -171,7 +172,7 @@ async function generate(){
   material.forEach(m => (m.roles||[]).forEach(r => {
     if(!r.delivered || !r.delivered.length) return;
     const g = groupOf(r.roleId); if(!g || !proposals[g]) return;
-    proposals[g].push({ ip:m.ip_name, role:r.role, member:r.member, delivered:r.delivered, content:r.content, wk:r.wk });
+    proposals[g].push({ ip:m.ip_name, role:r.role, member:r.member, delivered:r.delivered, content:r.content, links:r.links||[], wk:r.wk });
   }));
   groupsOrder.forEach(g => proposals[g].sort((a,b)=> (b.wk?1:0)-(a.wk?1:0)));  // 本週優先
 
@@ -225,8 +226,9 @@ function render(){
             + (it.wk ? '<span style="color:var(--green);font-weight:700">● 本週 </span>' : '')
             + '<b>'+esc(it.ip)+'</b> · '+esc(it.role)+(it.member?' · '+esc(it.member):'')
             + '<span style="color:var(--dim)">　'+esc((it.delivered||[]).join('、'))+'</span>'
-            + (it.content ? ' <span class="propCaret" style="color:var(--gold);font-size:11px">▸ 看內容</span>' : '<span style="color:var(--dim);font-size:11px">　（無草稿）</span>')
+            + (it.content ? ' <span class="propCaret" style="color:var(--gold);font-size:11px">▸ 看內容</span>' : (!(it.links&&it.links.length) ? '<span style="color:var(--dim);font-size:11px">　（無草稿/連結）</span>' : ''))
           + '</div>'
+          + ((it.links&&it.links.length) ? '<div style="padding-left:2px;margin:-2px 0 6px">'+it.links.map((u,li)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener" style="color:#8dd3ff;text-decoration:none;font-size:12.5px;font-weight:700;margin-right:14px">🔗 '+(it.links.length>1?('提案'+(li+1)):'開啟提案原檔')+'</a>').join('')+'</div>' : '')
           + (it.content ? '<div class="prop-body" style="display:none;white-space:pre-wrap;font-size:12.5px;line-height:1.55;color:#d8d0c0;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:0 0 8px;max-height:300px;overflow:auto">'+esc(it.content)+'</div>' : '')
         + '</div>';
       });
@@ -301,7 +303,7 @@ function buildAgenda(forSlack){
       const items = STATE.proposals[g] || [];
       L.push(B+phaseZh(g)+'（'+items.length+'）'+B);
       if(!items.length) L.push('• （本週無新提案）');
-      else items.forEach(it => L.push('• '+(it.wk?'●本週 ':'')+it.ip+' · '+it.role+(it.member?' · '+it.member:'')+'：'+(it.delivered||[]).join('、')));
+      else items.forEach(it => L.push('• '+(it.wk?'●本週 ':'')+it.ip+' · '+it.role+(it.member?' · '+it.member:'')+'：'+(it.delivered||[]).join('、')+((it.links&&it.links.length)?'　'+it.links.join('  '):'')));
     });
   }
   return L.join('\n');

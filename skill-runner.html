@@ -486,10 +486,21 @@ function renderCovBox(){
     + items.map((d,i)=>{ const st=(cov[i]&&cov[i].status)||'todo'; return '<div class="covrow">'+(ic[st]||ic.todo)+' '+esc(d)+'</div>'; }).join('')
     + '</div>';
 }
+function links(){ return (T.run && T.run.responses && Array.isArray(T.run.responses.__links)) ? T.run.responses.__links : []; }
+// 🔗 提案連結：ChatGPT/Gemini/Doc/Figma/Drive 的提案原檔連結，存 responses.__links，開會包會顯示給大家點開
+function renderLinks(){
+  if(!T.roleId) return '';
+  const ls=links();
+  return '<div class="covbox"><h3>🔗 提案連結（'+ls.length+'）</h3>'
+    + '<div style="font-size:11px;color:var(--dim);margin:-4px 0 7px">貼上你提案的原檔連結（ChatGPT/Gemini/Google Doc/Figma/Drive…）。開會包會顯示給大家點開、保留你的原始格式。</div>'
+    + ls.map((u,i)=>'<div class="covrow" style="display:flex;justify-content:space-between;align-items:center;gap:6px"><a href="'+esc(u)+'" target="_blank" rel="noopener" style="color:#8dd3ff;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">🔗 '+esc(u)+'</a><button data-rml="'+i+'" title="移除" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px">×</button></div>').join('')
+    + '<button id="addLinkBtn" style="margin-top:6px;background:#20242c;border:1px solid rgba(255,255,255,.14);border-radius:7px;color:#fff4e3;font-family:inherit;font-size:12px;font-weight:700;padding:6px 11px;cursor:pointer">+ 加提案連結</button>'
+    + '</div>';
+}
 function renderGuide(){
   const f=SKILL_FLOWS[T.skill];
   const focus = T.roleId ? ('★ 你的角色：'+esc(roleById(T.roleId).name)+'　顧問只帶你做這塊，其餘階段是上下游脈絡') : '';
-  return '<div class="guide">'+renderCovBox()+'<h3>流程全貌（'+f.stages.length+' 階段）</h3>'+(focus?'<div class="focus">'+focus+'</div>':'')
+  return '<div class="guide">'+renderCovBox()+renderLinks()+'<h3>流程全貌（'+f.stages.length+' 階段）</h3>'+(focus?'<div class="focus">'+focus+'</div>':'')
     + f.stages.map((s,i)=>'<div class="gstep"><span class="n">'+(i+1)+'</span><span><div>'+esc(s.title)+'</div><div class="cmd">'+esc(s.cmd)+'</div></span></div>').join('')+'</div>';
 }
 function bubbles(){
@@ -533,6 +544,14 @@ function wire(){
   if($('fileInput')) $('fileInput').onchange=(e)=>{ addFiles(e.target.files); e.target.value=''; };
   document.querySelectorAll('[data-rm]').forEach(b=>{ b.onclick=()=>{ T.pending.splice(+b.dataset.rm,1); renderChat(); }; });
   document.querySelectorAll('[data-rmd]').forEach(b=>{ b.onclick=()=>{ T.pendingDocs.splice(+b.dataset.rmd,1); renderChat(); }; });
+  if($('addLinkBtn')) $('addLinkBtn').onclick=()=>{
+    const u=(prompt('貼上提案連結（ChatGPT / Gemini / Google Doc / Figma / Drive…）：')||'').trim();
+    if(!u) return;
+    if(!/^https?:\/\//i.test(u)){ alert('請貼有效網址（http/https 開頭）'); return; }
+    if(!T.run.responses.__links) T.run.responses.__links=[];
+    T.run.responses.__links.push(u); saveRun(); renderChat();
+  };
+  document.querySelectorAll('[data-rml]').forEach(b=>{ b.onclick=()=>{ if(T.run.responses.__links){ T.run.responses.__links.splice(+b.dataset.rml,1); saveRun(); renderChat(); } }; });
   document.querySelectorAll('.bimgs img').forEach(img=>{ img.onclick=()=>openLightbox(img.src); });
   const input=$('input');
   if($('sendBtn')) $('sendBtn').onclick=()=>doSend();

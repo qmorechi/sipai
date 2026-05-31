@@ -410,7 +410,11 @@ async function sbFetch(path, opts={}) {
   }
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: reqHeaders(), ...opts });
   if (!res.ok) throw new Error(`${res.status}`);
-  return res.status === 204 ? null : res.json();
+  // PostgREST 的 POST/PATCH 預設回空 body → 對空字串 res.json() 會在 Safari 丟
+  // 「The string did not match the expected pattern」。先讀 text、空回 null。
+  if (res.status === 204) return null;
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
 }
 
 const phaseColor = phase => ROLE_DATA.phaseMeta[phase]?.color || '#9ba7b5';

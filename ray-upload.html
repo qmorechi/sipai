@@ -311,7 +311,11 @@ async function sbFetch(path, opts={}){
   }
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: reqHeaders(), ...opts });
   if(!res.ok){ const t = await res.text().catch(()=> ''); throw new Error(`${res.status} ${t}`.trim()); }
-  return res.status === 204 ? null : res.json();
+  // PostgREST 的 POST/PATCH 預設回空 body（201/204）。對空字串呼叫 res.json() 會在 Safari
+  // 丟「The string did not match the expected pattern」→ 發版半殘。改成先讀 text、空回 null。
+  if(res.status === 204) return null;
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
 }
 
 // ── 身份（?u= 決定 released_by，預設 ray）──

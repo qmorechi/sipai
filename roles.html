@@ -6,9 +6,9 @@
 <title>IP 全流程 22 個專業角色互動節點圖</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0f1116;color:#fff4e3;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;}
+body{margin:0;background:#0d0d0f;color:#e8e6e0;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;}
 .breadcrumb{display:flex;align-items:center;gap:10px;padding:12px 28px;font-size:12px;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.25);font-weight:700}
-.breadcrumb a{color:#f2b35e;text-decoration:none;transition:opacity .15s}
+.breadcrumb a{color:#c5a46b;text-decoration:none;transition:opacity .15s}
 .breadcrumb a:hover{opacity:.7}
 .breadcrumb .sep{color:#5a6270;font-size:14px}
 .breadcrumb .current{color:#cfc7bb}
@@ -24,7 +24,7 @@ h1{font-size:34px;line-height:1.12;margin:0 0 8px}
 .phase h2{margin:0 0 8px;font-size:21px}
 .phase p{margin:0 0 14px;color:#cfc7bb;font-size:14px;line-height:1.45}
 .nodes{display:grid;gap:10px}
-button.node{appearance:none;border:1px solid rgba(255,255,255,.12);background:#20242c;color:#fff4e3;text-align:left;border-radius:14px;padding:11px 12px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.18);transition:.15s transform,.15s border,.15s background;width:100%}
+button.node{appearance:none;border:1px solid rgba(255,255,255,.12);background:#20242c;color:#e8e6e0;text-align:left;border-radius:14px;padding:11px 12px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.18);transition:.15s transform,.15s border,.15s background;width:100%}
 button.node:hover{transform:translateY(-1px);border-color:var(--c)}
 button.node.active{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c),transparent 70%),0 16px 36px rgba(0,0,0,.28)}
 button.node.mine{background:color-mix(in srgb,var(--c),#20242c 72%);border-color:color-mix(in srgb,var(--c),transparent 35%)}
@@ -35,22 +35,22 @@ button.node.mine .node-title::after{content:"★ 我的";font-size:11px;font-wei
 
 /* ── 成員列 ── */
 .node-members{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0 42px;min-height:0}
-.member-tag{display:inline-flex;align-items:center;gap:4px;background:color-mix(in srgb,var(--c),transparent 80%);border:1px solid color-mix(in srgb,var(--c),transparent 40%);border-radius:999px;padding:3px 9px;font-size:12px;color:#fff4e3;font-weight:800;line-height:1}
-.member-tag .remove-btn{cursor:pointer;color:#9ba7b5;font-size:11px;margin-left:1px;line-height:1;padding:0 2px}
+.member-tag{display:inline-flex;align-items:center;gap:4px;background:color-mix(in srgb,var(--c),transparent 80%);border:1px solid color-mix(in srgb,var(--c),transparent 40%);border-radius:999px;padding:3px 9px;font-size:12px;color:#e8e6e0;font-weight:800;line-height:1}
+.member-tag .remove-btn{cursor:pointer;color:#a3a097;font-size:11px;margin-left:1px;line-height:1;padding:0 2px}
 .member-tag .remove-btn:hover{color:#ff8b73}
 
 /* ── 申請加入 tag(末尾彩色,只在 ?u= 個人模式出現) ── */
 .node-wrap{position:relative}
-.apply-tag{display:inline-flex;align-items:center;gap:3px;background:#f2b35e;color:#111318;border:none;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:900;cursor:pointer;font-family:inherit;line-height:1;transition:.15s transform,.15s box-shadow;box-shadow:0 2px 8px rgba(242,179,94,.3);letter-spacing:.02em}
+.apply-tag{display:inline-flex;align-items:center;gap:3px;background:#c5a46b;color:#111318;border:none;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:900;cursor:pointer;font-family:inherit;line-height:1;transition:.15s transform,.15s box-shadow;box-shadow:0 2px 8px rgba(242,179,94,.3);letter-spacing:.02em}
 .apply-tag:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(242,179,94,.5)}
 
 /* ── 側欄 ── */
 .side{position:sticky;top:0;height:100vh;border-left:1px solid rgba(255,255,255,.12);background:#171b22;padding:28px;overflow:auto;transition:width .2s,padding .2s}
 .app.detail-collapsed{grid-template-columns:minmax(780px,1fr) 0}
 .app.detail-collapsed .side{width:0;padding:0;border-left:0;overflow:hidden}
-.detail-toggle{position:fixed;top:54px;right:14px;z-index:60;font:800 12px/1 system-ui,sans-serif;padding:7px 12px;border-radius:8px;background:#242a34;border:1px solid rgba(255,255,255,.22);color:#f2b35e;cursor:pointer}
-.detail-toggle:hover{border-color:#f2b35e}
-.panel-kicker{font-size:13px;letter-spacing:.12em;color:#f2b35e;text-transform:uppercase;font-weight:950;margin:0 0 12px}
+.detail-toggle{position:fixed;top:54px;right:14px;z-index:60;font:800 12px/1 system-ui,sans-serif;padding:7px 12px;border-radius:8px;background:#242a34;border:1px solid rgba(255,255,255,.22);color:#c5a46b;cursor:pointer}
+.detail-toggle:hover{border-color:#c5a46b}
+.panel-kicker{font-size:13px;letter-spacing:.12em;color:#c5a46b;text-transform:uppercase;font-weight:950;margin:0 0 12px}
 .side h2{font-size:30px;margin:0 0 6px;line-height:1.15}
 .side .en{color:#b9c2cf;font-weight:800;margin-bottom:18px}
 .badge{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 11px;background:#242a34;border:1px solid rgba(255,255,255,.12);font-weight:900;margin-bottom:18px}
@@ -60,7 +60,7 @@ button.node.mine .node-title::after{content:"★ 我的";font-size:11px;font-wei
 ul{margin:0;padding-left:1.2em;color:#d8d2c8;line-height:1.55}
 li{margin:.35em 0}
 .risk{border:1px solid rgba(255,139,115,.35);background:rgba(255,139,115,.08);border-radius:14px;padding:12px 13px;color:#ffe0d8;line-height:1.5}
-.hint{margin-top:18px;color:#9ba7b5;font-size:13px;line-height:1.45}
+.hint{margin-top:18px;color:#a3a097;font-size:13px;line-height:1.45}
 .arrow{height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);margin:16px 0}
 
 /* ── 側欄成員區塊 ── */
@@ -70,38 +70,38 @@ li{margin:.35em 0}
 .no-member{color:#5a6270;font-size:13px;font-style:italic}
 
 /* ── 身份 badge（個人模式才顯示） ── */
-.identity-badge{display:inline-flex;align-items:center;gap:14px;background:#1d222b;border:1px solid rgba(255,255,255,.15);border-left:4px solid var(--c-id,#f2b35e);border-radius:10px;padding:10px 16px;margin:14px 0 0;font-size:13px;color:#cfc7bb;font-weight:700;max-width:100%;flex-wrap:wrap}
-.identity-badge strong{color:#fff4e3;font-size:16px;font-weight:900}
+.identity-badge{display:inline-flex;align-items:center;gap:14px;background:#1d222b;border:1px solid rgba(255,255,255,.15);border-left:4px solid var(--c-id,#c5a46b);border-radius:10px;padding:10px 16px;margin:14px 0 0;font-size:13px;color:#cfc7bb;font-weight:700;max-width:100%;flex-wrap:wrap}
+.identity-badge strong{color:#e8e6e0;font-size:16px;font-weight:900}
 .identity-ip{color:#cfc7bb;font-weight:700;padding-left:14px;border-left:1px solid rgba(255,255,255,.15)}
-.identity-hint{color:#9ba7b5;font-weight:600;font-size:12px;line-height:1.4;padding-left:14px;border-left:1px solid rgba(255,255,255,.15)}
+.identity-hint{color:#a3a097;font-weight:600;font-size:12px;line-height:1.4;padding-left:14px;border-left:1px solid rgba(255,255,255,.15)}
 
 /* ── 我的快速設定（個人模式才出現）── */
 .my-panel{margin-top:16px;border:1px solid rgba(255,255,255,.12);background:#161a21;border-radius:14px;padding:14px 16px}
-.mp-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#9ba7b5;font-weight:900;margin-bottom:9px}
+.mp-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#a3a097;font-weight:900;margin-bottom:9px}
 .mp-templates{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-.tpl-btn{appearance:none;font-family:inherit;background:#20242c;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff4e3;padding:8px 12px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s transform,.15s border,.15s background}
-.tpl-btn:hover{transform:translateY(-1px);border-color:#f2b35e;background:#262b35}
+.tpl-btn{appearance:none;font-family:inherit;background:#20242c;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#e8e6e0;padding:8px 12px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s transform,.15s border,.15s background}
+.tpl-btn:hover{transform:translateY(-1px);border-color:#c5a46b;background:#262b35}
 .tpl-btn .tpl-emoji{margin-right:5px}
-.tpl-btn .tpl-count{margin-left:6px;font-size:11px;color:#9ba7b5;font-weight:700}
-.tpl-btn.tpl-clear{border-style:dashed;color:#9ba7b5}
+.tpl-btn .tpl-count{margin-left:6px;font-size:11px;color:#a3a097;font-weight:700}
+.tpl-btn.tpl-clear{border-style:dashed;color:#a3a097}
 .tpl-btn.tpl-clear:hover{border-color:#ff8b73;color:#ffd8cf}
 /* 過載指標列 */
 .mp-overload{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
-.ov-stat{display:flex;align-items:baseline;gap:4px;font-size:13px;color:#9ba7b5;font-weight:700}
-.ov-stat .ov-num{font-size:21px;font-weight:950;color:#fff4e3}
+.ov-stat{display:flex;align-items:baseline;gap:4px;font-size:13px;color:#a3a097;font-weight:700}
+.ov-stat .ov-num{font-size:21px;font-weight:950;color:#e8e6e0}
 .ov-stat .ov-of{font-size:12px;color:#5a6270;font-weight:700}
 .warn-pill{padding:6px 12px;border-radius:16px;font-size:12px;font-weight:900;white-space:nowrap}
-.warn-empty{background:#242a34;color:#9ba7b5}
+.warn-empty{background:#242a34;color:#a3a097}
 .warn-ok{background:rgba(74,222,128,.16);color:#86efac}
-.warn-mid{background:rgba(242,179,94,.20);color:#f2b35e}
+.warn-mid{background:rgba(242,179,94,.20);color:#c5a46b}
 .warn-high{background:rgba(255,139,115,.20);color:#ff8b73}
 .ov-channels{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:160px}
 .ov-chan{display:inline-flex;align-items:center;gap:5px;background:#20242c;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:800;color:#d8d2c8}
-.ov-chan::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--cc,#9ba7b5)}
+.ov-chan::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--cc,#a3a097)}
 
 /* ── 載入狀態 ── */
 .sync-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-left:6px;vertical-align:middle;transition:background .3s}
-.sync-dot.syncing{background:#f2b35e;animation:pulse .8s infinite}
+.sync-dot.syncing{background:#c5a46b;animation:pulse .8s infinite}
 .sync-dot.error{background:#ff8b73}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
@@ -167,7 +167,7 @@ function setSyncState(state) {
 const DATA = ROLE_DATA;
 
 const roleById   = new Map(DATA.roles.map(r=>[r.id,r]));
-const phaseColor = phase => DATA.phaseMeta[phase]?.color || '#9ba7b5';
+const phaseColor = phase => DATA.phaseMeta[phase]?.color || '#a3a097';
 const memberById = new Map(MEMBERS.map(m=>[m.id,m]));
 
 // ── 5 主頻道對應（過載指標看「橫跨幾個主頻道」，定義在 roles-data.js）──

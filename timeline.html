@@ -9,7 +9,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#0d0d0f;--surface:#161618;--surface2:#1e1e22;--border:#2a2a30;
-  --text:#e8e6e0;--muted:#7a7870;
+  --text:#e8e6e0;--muted:#a3a097;
   --accent-1:#c5a46b;--accent-2:#5ba89e;--accent-3:#c96b5a;--accent-4:#8b7ec8;
 }
 html{scroll-behavior:smooth;}
@@ -176,7 +176,7 @@ ul.card-list li strong{color:var(--text);font-weight:500;}
   <div class="header-right">2026 / 03 → 現在<br>6 場會議　6 個提案　2 條主線</div>
 </header>
 <div class="wrapper" id="wrapper">
-  <div id="tl-gate" style="padding:56px 28px;color:#9ba7b5;font-size:15px;line-height:1.8">載入中…</div>
+  <div id="tl-gate" style="padding:56px 28px;color:#a3a097;font-size:15px;line-height:1.8">載入中…</div>
 </div>
 
 <script src="vendor/supabase.js"></script>
@@ -226,15 +226,15 @@ function animateScores() {
 async function loadTimeline() {
   const wrap = document.getElementById('wrapper');
   if (!(window.MXIPAuth && MXIPAuth.currentUser())) {
-    wrap.innerHTML = '<div id="tl-gate" style="padding:56px 28px;color:#9ba7b5;font-size:15px;line-height:1.8">🔒 發展歷程為內部資料，請用右上角「用 MX 公司帳號登入」後檢視。</div>';
+    wrap.innerHTML = '<div id="tl-gate" style="padding:56px 28px;color:#a3a097;font-size:15px;line-height:1.8">🔒 發展歷程為內部資料，請用右上角「用 MX 公司帳號登入」後檢視。</div>';
     return;
   }
-  wrap.innerHTML = '<div id="tl-gate" style="padding:56px 28px;color:#9ba7b5;font-size:15px;line-height:1.8">載入中…</div>';
+  wrap.innerHTML = '<div id="tl-gate" style="padding:56px 28px;color:#a3a097;font-size:15px;line-height:1.8">載入中…</div>';
   try {
     const res = await fetch(`${MXIPAuth.SB_URL}/rest/v1/private_pages?page_key=eq.timeline&select=html`, { headers: MXIPAuth.authHeaders() });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
-    wrap.innerHTML = (rows[0] && rows[0].html) || '<div id="tl-gate" style="padding:56px 28px;color:#9ba7b5">尚無內容。</div>';
+    wrap.innerHTML = (rows[0] && rows[0].html) || '<div id="tl-gate" style="padding:56px 28px;color:#a3a097">尚無內容。</div>';
     animateScores();
     await appendMeetingNodes(wrap);
   } catch (e) {

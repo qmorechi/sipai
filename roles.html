@@ -187,8 +187,8 @@ function resolveIdentity() {
   myUserId = email ? email.split('@')[0] : null;
   myUser   = myUserId ? (memberById.get(myUserId) || null) : null;
 }
-const myIpId    = urlParams.get('ip') || (IPS.find(i => i.status === 'active')?.id || 'SIPAI');
-const myIp      = ipById.get(myIpId) || IPS[0];
+let myIpId    = urlParams.get('ip') || (IPS.find(i => i.status === 'active')?.id || 'SIPAI');
+let myIp      = ipById.get(myIpId) || IPS[0];
 
 // ── 本地快取(fallback,以 IP 為單位分開存) ──
 const CACHE_KEY = `mxip_role_members_${myIpId}_v3`;
@@ -555,6 +555,7 @@ function reloadAndRender() {
   });
 }
 (window.MXIPAuth ? MXIPAuth.init({ gate: true }) : Promise.resolve())
+  .then(async () => { await loadIPs(); myIp = ipById.get(myIpId) || IPS[0]; })  // 動態 IP（支援新增的 IP）
   .then(reloadAndRender);
 // 登入/登出即時重繪：登出立刻清掉指派顯示，登入後載回。
 if (window.MXIPAuth && MXIPAuth.onChange) MXIPAuth.onChange(reloadAndRender);

@@ -284,6 +284,7 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
     <button class="tab-btn active" data-tab="roles">📋 角色指派</button>
     <button class="tab-btn" data-tab="skills">📦 Skill 版本管理</button>
     <button class="tab-btn" data-tab="engines">🤖 AI 引擎管理</button>
+    <button class="tab-btn" data-tab="projects">🗂️ IP 專案</button>
   </div>
 
   <div class="tab-panel active" id="tab-roles">
@@ -358,6 +359,25 @@ table.mapping thead th{background:#0f1116;font-size:11px;color:#9ba7b5;font-weig
     <div class="registry" id="engineRegistry"></div>
     <div class="vh-wrap"><h3>🕓 engine_config 版本史</h3><div id="configHistory"></div></div>
   </div><!-- /tab-engines -->
+
+  <div class="tab-panel" id="tab-projects">
+    <section class="block">
+      <h2>🗂️ IP 專案</h2>
+      <p class="lead">只有「<b style="color:#71d1c2">上線中</b>」的 IP 會進 <a href="meeting.html" style="color:#f2b35e">本週開會包</a> 議程；「暫停」的 IP 大家仍可在 Skill Runner 持續充實內容，養好再上線、再拿出來討論。</p>
+      <div id="ipTiles" style="margin-top:12px"></div>
+    </section>
+    <section class="block">
+      <h2>➕ 新增專案</h2>
+      <p class="lead">新案預設「暫停」，先在背景養內容，準備好再上線。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px">
+        <input id="npName" placeholder="專案名稱（例：星際拉麵）" style="flex:1;min-width:160px;background:#20242c;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff4e3;font-family:inherit;font-size:13px;padding:9px 11px">
+        <input id="npCode" placeholder="代號 codename（英文無空格，例：StarRamen）" style="flex:1;min-width:160px;background:#20242c;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff4e3;font-family:inherit;font-size:13px;padding:9px 11px">
+        <select id="npTier" style="background:#20242c;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff4e3;font-family:inherit;font-size:13px;padding:9px 11px"><option>概念提案</option><option>第二主線</option><option>主線</option></select>
+        <button id="npBtn" style="background:#f2b35e;color:#111318;border:none;border-radius:8px;font-family:inherit;font-weight:800;font-size:13px;padding:9px 16px;cursor:pointer">新增專案</button>
+      </div>
+      <p id="npMsg" class="lead" style="margin-top:8px"></p>
+    </section>
+  </div><!-- /tab-projects -->
 </div>
 
 <!-- Slack 發送 Modal -->
@@ -1048,8 +1068,70 @@ function switchTab(name){
   const loggedIn = !(window.MXIPAuth && !MXIPAuth.currentUser());
   if(loggedIn && name==='skills'  && !skillState)  loadSkills().then(renderSkillTab);
   if(loggedIn && name==='engines' && !engineState) loadEngines().then(renderEngineTab);
+  if(loggedIn && name==='projects') renderProjects();
 }
 document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> switchTab(b.dataset.tab)));
+
+// ── IP 專案管理（磚塊：上線/暫停切換 + 新增專案，寫 ip_projects）──
+function renderProjects(){
+  const wrap = document.getElementById('ipTiles'); if(!wrap) return;
+  const active = IPS.filter(i => i.status === 'active');
+  const paused = IPS.filter(i => i.status !== 'active');
+  const grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px';
+  const tile = (ip) => {
+    const on = ip.status === 'active';
+    const pill = on ? '<span style="color:#71d1c2">● 上線中</span>' : '<span style="color:#f8d66d">● 暫停</span>';
+    return '<div style="background:'+(on?'#16241f':'#20242c')+';border:1px solid '+(on?'rgba(113,209,194,.45)':'rgba(255,255,255,.12)')+';border-radius:12px;padding:14px">'
+      + '<div style="font-weight:800;font-size:15px">'+esc(ip.name)+'</div>'
+      + '<div style="font-size:11.5px;color:#9ba7b5;margin:3px 0 11px">'+esc(ip.id)+(ip.tier?' · '+esc(ip.tier):'')+'</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+        + '<span style="font-size:12px;font-weight:700">'+pill+'</span>'
+        + '<button data-ip="'+esc(ip.id)+'" data-to="'+(on?'paused':'active')+'" class="ipToggle" style="background:'+(on?'transparent':'#71d1c2')+';color:'+(on?'#f8d66d':'#111318')+';border:1px solid '+(on?'rgba(248,214,109,.5)':'#71d1c2')+';border-radius:7px;font-family:inherit;font-weight:800;font-size:12px;padding:6px 13px;cursor:pointer">'+(on?'暫停':'上線')+'</button>'
+      + '</div></div>';
+  };
+  const pausedLabel = (open) => (open?'▾':'▸')+' 暫停中（'+paused.length+'）· 仍可在 Skill Runner 充實，不進會議';
+  let h = '<div style="'+grid+'">'
+    + (active.map(tile).join('') || '<div style="color:#9ba7b5;font-size:13px;grid-column:1/-1">目前沒有上線中的 IP（會議開會包會是空的）。把下面暫停的 IP 設「上線」即可。</div>')
+    + '</div>';
+  if(paused.length){
+    h += '<div style="margin-top:16px">'
+      + '<button id="pausedToggle" style="background:none;border:none;color:#9ba7b5;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:6px 0">'+pausedLabel(false)+'</button>'
+      + '<div id="pausedGrid" style="'+grid+';margin-top:10px;display:none">'+paused.map(tile).join('')+'</div>'
+      + '</div>';
+  }
+  wrap.innerHTML = h;
+  wrap.querySelectorAll('.ipToggle').forEach(b => b.addEventListener('click', () => toggleStatus(b.dataset.ip, b.dataset.to)));
+  const pt = document.getElementById('pausedToggle');
+  if(pt) pt.addEventListener('click', () => {
+    const g = document.getElementById('pausedGrid'); const open = (g.style.display === 'none');
+    g.style.display = open ? 'grid' : 'none'; pt.textContent = pausedLabel(open);
+  });
+}
+async function toggleStatus(id, to){
+  try{
+    await sbFetch('ip_projects?codename=eq.'+encodeURIComponent(id), { method:'PATCH', body: JSON.stringify({ status: to, updated_at: new Date().toISOString() }) });
+    const ip = IPS.find(x=>x.id===id); if(ip) ip.status = to;
+    renderProjects(); renderIpPicker();
+  }catch(e){ alert('狀態更新失敗：'+(e.message||e)); }
+}
+async function addProject(){
+  const msg = document.getElementById('npMsg');
+  const name = document.getElementById('npName').value.trim();
+  const code = document.getElementById('npCode').value.trim();
+  const tier = document.getElementById('npTier').value;
+  if(!name || !code){ msg.textContent='請填專案名稱與代號。'; return; }
+  if(!/^[A-Za-z0-9_-]+$/.test(code)){ msg.textContent='代號請用英文/數字/-/_（無空格、無中文）。'; return; }
+  if(IPS.some(x=>x.id===code)){ msg.textContent='代號已存在，換一個。'; return; }
+  msg.textContent='新增中…';
+  try{
+    await sbFetch('ip_projects', { method:'POST', body: JSON.stringify({ name, codename:code, tier, status:'paused' }) });
+    await loadIPs();
+    renderProjects(); renderIpPicker();
+    document.getElementById('npName').value=''; document.getElementById('npCode').value='';
+    msg.textContent='✅ 已新增「'+name+'」（暫停中）。大家可到 Skill Runner 開始充實，準備好再上線、進會議。';
+  }catch(e){ msg.textContent='新增失敗：'+(e.message||e); }
+}
+var _np = document.getElementById('npBtn'); if(_np) _np.addEventListener('click', addProject);
 
 // ── 啟動 ──
 async function init() {
@@ -1058,7 +1140,10 @@ async function init() {
     MXIPAuth.showForbidden('主控台僅限管理員與後台');
     return;
   }
+  await loadIPs();                 // 從 ip_projects 載入最新 IP 清單+狀態（含新增的）
+  if(!IPS.some(i=>i.id===currentIpId) && IPS[0]) currentIpId = IPS[0].id;
   renderIpPicker();
+  renderProjects();
   document.getElementById('navRoles').href = `roles.html?ip=${encodeURIComponent(currentIpId)}`;
   await loadAssignments();
   renderProgress();

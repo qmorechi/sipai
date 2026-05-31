@@ -127,8 +127,10 @@ async function gatherIP(ip){
 // ── 生成開會包 ──
 async function generate(){
   setBusy(true); setMsg('讀取本週各 IP 交付中…');
+  const live = activeIPs();
+  if(!live.length){ setMsg('目前沒有「上線中」的 IP。請先到主控台把要開會的 IP 設為上線。', true); setBusy(false); return; }
   const material = [];
-  for(const ip of IPS){ material.push(await gatherIP(ip)); }
+  for(const ip of live){ material.push(await gatherIP(ip)); }
   setMsg('AI 合成開會包中…（約 10-20 秒）');
   let brief = null;
   try{
@@ -144,10 +146,11 @@ async function generate(){
   // 合併 brief（決策內容）與 material（涵蓋率/燈號），依 suggested_order 排序
   const matById = {}; material.forEach(m => matById[m.ip_id] = m);
   const briefById = {}; brief.ips.forEach(b => briefById[b.ip_id] = b);
+  const liveIds = activeIPs().map(i => i.id);
   const order = (Array.isArray(brief.suggested_order) && brief.suggested_order.length)
-    ? brief.suggested_order : IPS.map(i => i.id);
+    ? brief.suggested_order : liveIds;
   const seen = new Set(); const cards = [];
-  order.concat(IPS.map(i=>i.id)).forEach(id => {
+  order.concat(liveIds).forEach(id => {
     if(seen.has(id) || !matById[id]) return; seen.add(id);
     const m = matById[id], b = briefById[id] || {};
     cards.push({ ip_id:id, ip_name:m.ip_name, pct:m.pct, light:lightOf(m.pct),
@@ -279,7 +282,11 @@ $('mdBtn').addEventListener('click', exportMd);
   if(window.MXIPAuth && !(await MXIPAuth.hasAnyRole(['admin','backend']))){
     MXIPAuth.showForbidden('本週開會包僅限管理員與後台');
     $('genBtn').disabled = true;
+    return;
   }
+  await loadIPs();  // 從 ip_projects 載入最新 IP 清單+狀態（只會合成上線中的）
+  const n = activeIPs().length;
+  $('weekLbl').textContent = '上線中 ' + n + ' 個 IP' + (IPS.length>n ? '（暫停 '+(IPS.length-n)+' 個，不進議程）' : '');
 });
 </script>
 </body>
